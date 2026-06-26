@@ -1,0 +1,174 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 560px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #eee;
+}
+
+.header h2 {
+  font-size: 18px;
+  color: #1a237e;
+  font-weight: 700;
+}
+
+.btnFechar {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #999;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.btnFechar:hover {
+  background: #f0f0f0;
+}
+
+.corpo {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.info {
+  background: #e3f2fd;
+  border: 1px solid #90caf9;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 13px;
+  color: #1565c0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.info code {
+  background: rgba(0,0,0,0.06);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.btnModelo {
+  padding: 9px 16px;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background 0.2s;
+}
+
+.btnModelo:hover {
+  background: #e0e0e0;
+}
+
+.dropzone {
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  color: #999;
+  font-size: 14px;
+  transition: border 0.2s;
+}
+
+.dropzone:hover {
+  border-color: #1a237e;
+  color: #1a237e;
+}
+
+.arquivoNome {
+  color: #1a237e;
+  font-weight: 600;
+}
+
+.erro {
+  background: #fdecea;
+  color: #c62828;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  border: 1px solid #f5c6cb;
+}
+
+.resultadoSucesso {
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 13px;
+  color: #2e7d32;
+}
+
+.resultadoAlerta {
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 13px;
+  color: #e65100;
+}
+
+.resultadoAlerta ul, .resultadoSucesso ul {
+  margin-top: 8px;
+  padding-left: 20px;
+}
+
+.acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+}
+
+.btnCancelar {
+  padding: 10px 20px;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btnImportar {
+  padding: 10px 24px;
+  background: #1a237e;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btnImportar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

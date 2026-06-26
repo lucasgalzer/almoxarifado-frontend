@@ -1,0 +1,165 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.titulo { font-size: 26px; font-weight: 700; color: var(--color-text); }
+.subtitulo { font-size: 13px; color: var(--color-text-muted); margin-top: 3px; }
+
+.acoesRapidas {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.formDevolucao {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.inputCodigo {
+  flex: 1;
+  padding: 11px 16px;
+  border: 1.5px solid #fecaca;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  outline: none;
+  background: #fef2f2;
+  color: var(--color-text);
+  transition: border-color 0.15s;
+}
+
+.inputCodigo:focus {
+  border-color: var(--color-danger);
+  background: white;
+}
+
+.inputCodigo::placeholder { color: #f87171; }
+
+.btnDevolverRapido {
+  padding: 11px 20px;
+  background: var(--color-danger);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.btnDevolverRapido:hover:not(:disabled) { background: var(--color-danger-dark); }
+.btnDevolverRapido:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btnNovo {
+  padding: 11px 20px;
+  background: var(--color-success);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.btnNovo:hover { background: #1b5e20; }
+
+.filtros {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.select {
+  padding: 9px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  outline: none;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.select:focus { border-color: var(--color-primary); }
+
+.tabela {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.tabela table { width: 100%; border-collapse: collapse; }
+.tabela thead { background: var(--color-surface-alt); }
+
+.tabela th {
+  padding: 11px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tabela td {
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tabela tbody tr:last-child td { border-bottom: none; }
+.tabela tbody tr:hover { background: var(--color-surface-alt); }
+
+.rowAtrasado { background: #fffbeb !important; }
+
+.vazio {
+  padding: 48px;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badgeEmprestado { background: #eff6ff; color: #2563eb; }
+.badgeDevolvido { background: #f0fdf4; color: #16a34a; }
+.badgeAtrasado { background: #fffbeb; color: #d97706; }
+.badgePerdido { background: #fef2f2; color: var(--color-danger); }
+.badgeDanificado { background: #f5f3ff; color: #7c3aed; }
+
+.btnDevolver {
+  padding: 5px 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  color: #16a34a;
+  transition: all 0.15s;
+}
+
+.btnDevolver:hover {
+  background: #dcfce7;
+  border-color: #16a34a;
+}
