@@ -14,9 +14,11 @@ function ModalSolicitacao({ onFechar, onSalvar }) {
     observacoes: '',
   })
 
-  useEffect(() => {
-    api.get('/produtos').then(({ data }) => setProdutos(data)).catch(console.error)
-  }, [])
+ useEffect(() => {
+  api.get('/produtos', { params: { tipo: 'reutilizavel' } })
+    .then(({ data }) => setProdutos(data.dados || []))
+    .catch(console.error)
+}, [])
 
   function handleFormChange(e) {
     const { name, value } = e.target
