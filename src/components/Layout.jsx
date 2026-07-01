@@ -49,8 +49,16 @@ function Layout() {
       if (data.cor_secundaria) {
         document.documentElement.style.setProperty('--color-secondary', data.cor_secundaria)
       }
-      if (data.nome_exibicao) setNomeExibicao(data.nome_exibicao)
-      if (data.logo_base64) setLogoBase64(data.logo_base64)
+      if (data.nome_exibicao) {
+  setNomeExibicao(data.nome_exibicao)
+  document.title = data.nome_exibicao
+} else {
+  document.title = 'Almoxarifado'
+}
+
+if (data.logo_base64) {
+  setLogoBase64(data.logo_base64)
+}
     }).catch(console.error)
   }, [])
 
@@ -131,8 +139,8 @@ function voltarSuperAdmin() {
             </div>
           )}
           <div>
-            <span className={styles.logoTitle}>Almoxarifado</span>
-            <span className={styles.logoSub}>{nomeExibicao}</span>
+            <span className={styles.logoTitle}>{nomeExibicao}</span>
+            <span className={styles.logoSub}>Almoxarifado</span>
           </div>
         </div>
 

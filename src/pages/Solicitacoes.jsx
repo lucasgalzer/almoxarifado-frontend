@@ -78,7 +78,7 @@ function Solicitacoes() {
     <div>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.titulo}>Solicitações</h1>
+          <h1 className={styles.titulo}>S</h1>
           <p className={styles.subtitulo}>{solicitacoes.length} solicitação(ões) encontrada(s)</p>
         </div>
         <button className={styles.btnNovo} onClick={() => setModalAberto(true)}>
