@@ -3,6 +3,7 @@ import api from '../services/api'
 import { useToast } from '../components/Toast'
 import ModalConfirmacao from '../components/ModalConfirmacao'
 import styles from './EmprestimosFixos.module.css'
+import Select from 'react-select'
 
 function EmprestimosFixos() {
   const { addToast } = useToast()
@@ -22,6 +23,13 @@ function EmprestimosFixos() {
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
   const pessoaInputRef = useRef(null)
+
+  const opcoesStatus = [
+  { value: 'ativo', label: 'Ativos' },
+  { value: 'encerrado', label: 'Encerrados' },
+  { value: '', label: 'Todos' },
+]
+
 
   useEffect(() => {
     api.get('/pessoas', { params: { ativo: true } })
@@ -176,11 +184,44 @@ function EmprestimosFixos() {
           onChange={e => setFiltroBusca(e.target.value)}
           className={styles.inputBusca}
         />
-        <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)} className={styles.select}>
-          <option value="ativo">Ativos</option>
-          <option value="encerrado">Encerrados</option>
-          <option value="">Todos</option>
-        </select>
+        <Select
+  className={styles.reactSelect}
+  classNamePrefix="react-select"
+  isSearchable={false}
+  options={opcoesStatus}
+  value={opcoesStatus.find(op => op.value === filtroStatus)}
+  onChange={(opcao) => setFiltroStatus(opcao?.value || '')}
+  styles={{
+              control: (provided) => ({
+                ...provided,
+                borderRadius: 8,
+              }),
+  
+              menu: (base) => ({
+                ...base,
+                borderRadius: 12,
+                overflow: 'hidden',
+              }),
+  
+              menuList: (base) => ({
+                ...base,
+                padding: 6,
+                borderRadius: 12,
+              }),
+  
+              option: (base, state) => ({
+                ...base,
+                borderRadius: 8,
+                marginBottom: 4,
+                backgroundColor: state.isSelected
+                  ? '#4c7fca'
+                  : state.isFocused
+                    ? '#f3f4f6'
+                    : '#fff',
+                color: state.isSelected ? '#fff' : '#111827',
+              }),
+            }}
+/>
       </div>
 
       {carregando ? (

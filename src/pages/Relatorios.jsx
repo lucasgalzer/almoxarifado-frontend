@@ -3,6 +3,7 @@ import api from '../services/api'
 import styles from './Relatorios.module.css'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import Select from 'react-select'
 
 const ABAS = [
   { id: 'estoque', label: 'Estoque atual' },
@@ -23,6 +24,29 @@ function Relatorios() {
     status: '',
   })
 
+  const opcoesTipoMovimentacao = [
+  { value: '', label: 'Todos' },
+  { value: 'entrada', label: 'Entrada' },
+  { value: 'saida', label: 'Saída' },
+  { value: 'ajuste', label: 'Ajuste' },
+  { value: 'devolucao', label: 'Devolução' },
+]
+
+const opcoesStatusEmprestimo = [
+  { value: '', label: 'Todos' },
+  { value: 'emprestado', label: 'Em aberto' },
+  { value: 'devolvido', label: 'Devolvido' },
+  { value: 'perdido', label: 'Perdido' },
+  { value: 'danificado', label: 'Danificado' },
+]
+
+const opcoesStatusManutencao = [
+  { value: '', label: 'Todos' },
+  { value: 'aguardando', label: 'Aguardando' },
+  { value: 'em_conserto', label: 'Em conserto' },
+  { value: 'consertado', label: 'Consertado' },
+  { value: 'descartado', label: 'Descartado' },
+]
   function handleFiltro(e) {
     const { name, value } = e.target
     setFiltros(prev => ({ ...prev, [name]: value }))
@@ -214,39 +238,154 @@ function Relatorios() {
         {aba === 'movimentacoes' && (
           <div className={styles.filtroGrupo}>
             <label>Tipo</label>
-            <select name="tipo" value={filtros.tipo} onChange={handleFiltro} className={styles.select}>
-              <option value="">Todos</option>
-              <option value="entrada">Entrada</option>
-              <option value="saida">Saída</option>
-              <option value="ajuste">Ajuste</option>
-              <option value="devolucao">Devolução</option>
-            </select>
-          </div>
+             <Select
+      className={styles.reactSelect}
+      classNamePrefix="react-select"
+      isSearchable={false}
+      options={opcoesTipoMovimentacao}
+      value={opcoesTipoMovimentacao.find(op => op.value === filtros.tipo)}
+      onChange={(opcao) =>
+        handleFiltro({
+          target: {
+            name: 'tipo',
+            value: opcao?.value || ''
+          }
+        })
+      }
+      styles={{
+                              control: (provided) => ({
+                                ...provided,
+                                borderRadius: 8,
+                              }),
+                  
+                              menu: (base) => ({
+                                ...base,
+                                borderRadius: 12,
+                                overflow: 'hidden',
+                              }),
+                  
+                              menuList: (base) => ({
+                                ...base,
+                                padding: 6,
+                                borderRadius: 12,
+                              }),
+                  
+                              option: (base, state) => ({
+                                ...base,
+                                borderRadius: 8,
+                                marginBottom: 4,
+                                backgroundColor: state.isSelected
+                                  ? '#4c7fca'
+                                  : state.isFocused
+                                    ? '#f3f4f6'
+                                    : '#fff',
+                                color: state.isSelected ? '#fff' : '#111827',
+                              }),
+                            }}
+    />
+  </div>
         )}
 
         {aba === 'emprestimos' && (
           <div className={styles.filtroGrupo}>
             <label>Status</label>
-            <select name="status" value={filtros.status} onChange={handleFiltro} className={styles.select}>
-              <option value="">Todos</option>
-              <option value="emprestado">Em aberto</option>
-              <option value="devolvido">Devolvido</option>
-              <option value="perdido">Perdido</option>
-              <option value="danificado">Danificado</option>
-            </select>
-          </div>
+            <Select
+      className={styles.reactSelect}
+      classNamePrefix="react-select"
+      isSearchable={false}
+      options={opcoesStatusEmprestimo}
+      value={opcoesStatusEmprestimo.find(op => op.value === filtros.status)}
+      onChange={(opcao) =>
+        handleFiltro({
+          target: {
+            name: 'status',
+            value: opcao?.value || ''
+          }
+        })
+      }
+      styles={{
+                              control: (provided) => ({
+                                ...provided,
+                                borderRadius: 8,
+                              }),
+                  
+                              menu: (base) => ({
+                                ...base,
+                                borderRadius: 12,
+                                overflow: 'hidden',
+                              }),
+                  
+                              menuList: (base) => ({
+                                ...base,
+                                padding: 6,
+                                borderRadius: 12,
+                              }),
+                  
+                              option: (base, state) => ({
+                                ...base,
+                                borderRadius: 8,
+                                marginBottom: 4,
+                                backgroundColor: state.isSelected
+                                  ? '#4c7fca'
+                                  : state.isFocused
+                                    ? '#f3f4f6'
+                                    : '#fff',
+                                color: state.isSelected ? '#fff' : '#111827',
+                              }),
+                            }}
+    />
+  </div>
+         
         )}
 
         {aba === 'manutencoes' && (
           <div className={styles.filtroGrupo}>
             <label>Status</label>
-            <select name="status" value={filtros.status} onChange={handleFiltro} className={styles.select}>
-              <option value="">Todos</option>
-              <option value="aguardando">Aguardando</option>
-              <option value="em_conserto">Em conserto</option>
-              <option value="consertado">Consertado</option>
-              <option value="descartado">Descartado</option>
-            </select>
+             <Select
+      className={styles.reactSelect}
+      classNamePrefix="react-select"
+      isSearchable={false}
+      options={opcoesStatusManutencao}
+      value={opcoesStatusManutencao.find(op => op.value === filtros.status)}
+      onChange={(opcao) =>
+        handleFiltro({
+          target: {
+            name: 'status',
+            value: opcao?.value || ''
+          }
+        })
+      }
+      styles={{
+                        control: (provided) => ({
+                          ...provided,
+                          borderRadius: 8,
+                        }),
+            
+                        menu: (base) => ({
+                          ...base,
+                          borderRadius: 12,
+                          overflow: 'hidden',
+                        }),
+            
+                        menuList: (base) => ({
+                          ...base,
+                          padding: 6,
+                          borderRadius: 12,
+                        }),
+            
+                        option: (base, state) => ({
+                          ...base,
+                          borderRadius: 8,
+                          marginBottom: 4,
+                          backgroundColor: state.isSelected
+                            ? '#52b61b'
+                            : state.isFocused
+                              ? '#f3f4f6'
+                              : '#fff',
+                          color: state.isSelected ? '#fff' : '#111827',
+                        }),
+                      }}
+    />
           </div>
         )}
 

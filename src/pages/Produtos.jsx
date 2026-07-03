@@ -4,10 +4,10 @@ import ModalProduto from '../components/ModalProduto'
 import ModalImportacaoCSV from '../components/ModalImportacaoCSV'
 import ModalHistorico from '../components/ModalHistorico'
 import ModalConfirmacao from '../components/ModalConfirmacao'
-import ModalEtiqueta from '../components/ModalEtiqueta'
 import ModalEtiquetaLote from '../components/ModalEtiquetaLote'
 import { useToast } from '../components/Toast'
 import styles from './Produtos.module.css'
+import Select from 'react-select'
 
 const POR_PAGINA = 20
 
@@ -135,6 +135,19 @@ function Produtos() {
 
   const produtosSelecionados = produtos.filter(p => selecionados.includes(p.id))
 
+  const opcoesTipo = [
+  { value: '', label: 'Todos os tipos' },
+  { value: 'consumivel', label: 'Consumível' },
+  { value: 'reutilizavel', label: 'Reutilizável' },
+]
+
+const opcoesStatus = [
+  { value: '', label: 'Todos os status' },
+  { value: 'disponivel', label: 'Disponível' },
+  { value: 'indisponivel', label: 'Indisponível' },
+  { value: 'em_manutencao', label: 'Manutenção' },
+]
+
   return (
     <div>
       <div className={styles.header}>
@@ -156,7 +169,7 @@ function Produtos() {
             </>
           ) : (
             <>
-              <button className={styles.btnSelecionar} onClick={() => setModoSelecao(true)}>Etiquetas em lote</button>
+              <button className={styles.btnSelecionar} onClick={() => setModoSelecao(true)}>Gerar Etiquetas</button>
               <button className={styles.btnImportar} onClick={() => setModalCSVAberto(true)}>Importar CSV</button>
               <button className={styles.btnNovo} onClick={abrirModalNovo}>+ Novo Produto</button>
             </>
@@ -172,17 +185,83 @@ function Produtos() {
           onChange={e => setBusca(e.target.value)}
           className={styles.inputBusca}
         />
-        <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} className={styles.select}>
-          <option value="">Todos os tipos</option>
-          <option value="consumivel">Consumível</option>
-          <option value="reutilizavel">Reutilizável</option>
-        </select>
-        <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)} className={styles.select}>
-          <option value="">Todos os status</option>
-          <option value="disponivel">Disponível</option>
-          <option value="indisponivel">Indisponível</option>
-          <option value="em_manutencao">Manutenção</option>
-        </select>
+       <Select
+  className={styles.reactSelect}
+  classNamePrefix="react-select"
+  isSearchable={false}
+  options={opcoesTipo}
+  value={opcoesTipo.find(op => op.value === filtroTipo)}
+  onChange={(opcao) => setFiltroTipo(opcao?.value || '')}
+  styles={{
+              control: (provided) => ({
+                ...provided,
+                borderRadius: 8,
+              }),
+  
+              menu: (base) => ({
+                ...base,
+                borderRadius: 12,
+                overflow: 'hidden',
+              }),
+  
+              menuList: (base) => ({
+                ...base,
+                padding: 6,
+                borderRadius: 12,
+              }),
+  
+              option: (base, state) => ({
+                ...base,
+                borderRadius: 8,
+                marginBottom: 4,
+                backgroundColor: state.isSelected
+                  ? '#4c7fca'
+                  : state.isFocused
+                    ? '#f3f4f6'
+                    : '#fff',
+                color: state.isSelected ? '#fff' : '#111827',
+              }),
+            }}
+/>
+
+<Select
+  className={styles.reactSelect}
+  classNamePrefix="react-select"
+  isSearchable={false}
+  options={opcoesStatus}
+  value={opcoesStatus.find(op => op.value === filtroStatus)}
+  onChange={(opcao) => setFiltroStatus(opcao?.value || '')}
+  styles={{
+              control: (provided) => ({
+                ...provided,
+                borderRadius: 8,
+              }),
+  
+              menu: (base) => ({
+                ...base,
+                borderRadius: 12,
+                overflow: 'hidden',
+              }),
+  
+              menuList: (base) => ({
+                ...base,
+                padding: 6,
+                borderRadius: 12,
+              }),
+  
+              option: (base, state) => ({
+                ...base,
+                borderRadius: 8,
+                marginBottom: 4,
+                backgroundColor: state.isSelected
+                  ? '#4c7fca'
+                  : state.isFocused
+                    ? '#f3f4f6'
+                    : '#fff',
+                color: state.isSelected ? '#fff' : '#111827',
+              }),
+            }}
+/>
       </div>
 
       <div className={styles.tabela}>
@@ -250,7 +329,6 @@ function Produtos() {
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                       <button className={styles.btnEditar} onClick={e => { e.stopPropagation(); abrirModalEditar(produto) }}>Editar</button>
                       <button className={styles.btnHistorico} onClick={e => { e.stopPropagation(); setProdutoHistorico(produto) }}>Histórico</button>
-                      <button className={styles.btnEtiqueta} onClick={e => { e.stopPropagation(); setProdutoEtiqueta(produto) }}>Etiqueta</button>
                       <button className={styles.btnExcluir} onClick={e => { e.stopPropagation(); setProdutoExcluindo(produto) }}>Excluir</button>
                     </div>
                   </td>

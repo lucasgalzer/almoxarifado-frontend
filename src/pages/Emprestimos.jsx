@@ -4,6 +4,7 @@ import ModalEmprestimo from '../components/ModalEmprestimo'
 import ModalDevolucao from '../components/ModalDevolucao'
 import { useToast } from '../components/Toast'
 import styles from './Emprestimos.module.css'
+import Select from 'react-select'
 
 function Emprestimos() {
   const { addToast } = useToast()
@@ -15,7 +16,6 @@ function Emprestimos() {
   const [carregando, setCarregando] = useState(true)
   const [modalAberto, setModalAberto] = useState(false)
   const [emprestimoDevolvendo, setEmprestimoDevolvendo] = useState(null)
-
   const [codigoDevolucao, setCodigoDevolucao] = useState('')
   const [devolvendo, setDevolvendo] = useState(false)
   const inputDevolucaoRef = useRef(null)
@@ -71,6 +71,22 @@ function Emprestimos() {
   const emprestimosFiltrados = filtroSetor
     ? emprestimos.filter(e => e.pessoa_setor === filtroSetor)
     : emprestimos
+
+  const opcoesPessoas = [
+    { value: '', label: 'Todas as pessoas' },
+    ...pessoas.map(p => ({
+      value: p.id,
+      label: p.nome_completo,
+    })),
+  ]
+
+  const opcoesSetores = [
+    { value: '', label: 'Todos os setores' },
+    ...setores.map(setor => ({
+      value: setor,
+      label: setor,
+    })),
+  ]
 
   function formatarData(data) {
     if (!data) return '—'
@@ -129,27 +145,140 @@ function Emprestimos() {
       </div>
 
       <div className={styles.filtros}>
-        <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)} className={styles.select}>
-          <option value="">Todos os status</option>
-          <option value="emprestado">Em aberto</option>
-          <option value="devolvido">Devolvidos</option>
-          <option value="perdido">Perdidos</option>
-          <option value="danificado">Danificados</option>
-        </select>
+        <Select
+          className={styles.reactSelect}
+          classNamePrefix="react-select"
+          placeholder="Status"
+          isSearchable={false}
+          options={[
+            { value: '', label: 'Todos os status' },
+            { value: 'emprestado', label: 'Em aberto' },
+            { value: 'devolvido', label: 'Devolvidos' },
+            { value: 'perdido', label: 'Perdidos' },
+            { value: 'danificado', label: 'Danificados' },
+          ]}
+          value={[
+            { value: '', label: 'Todos os status' },
+            { value: 'emprestado', label: 'Em aberto' },
+            { value: 'devolvido', label: 'Devolvidos' },
+            { value: 'perdido', label: 'Perdidos' },
+            { value: 'danificado', label: 'Danificados' },
+          ].find(op => op.value === filtroStatus)}
+          onChange={opcao => setFiltroStatus(opcao.value)}
+          styles={{
 
-        <select value={filtroPessoa} onChange={e => setFiltroPessoa(e.target.value)} className={styles.select}>
-          <option value="">Todas as pessoas</option>
-          {pessoas.map(p => (
-            <option key={p.id} value={p.id}>{p.nome_completo}</option>
-          ))}
-        </select>
+            control: (provided) => ({
+              ...provided,
+              borderRadius: 8,
+            }),
+            menu: (base) => ({
+              ...base,
+              borderRadius: 8,
+              overflow: 'hidden',
+            }),
 
-        <select value={filtroSetor} onChange={e => setFiltroSetor(e.target.value)} className={styles.select}>
-          <option value="">Todos os setores</option>
-          {setores.map(s => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
+            menuList: (base) => ({
+              ...base,
+              padding: 6,
+              borderRadius: 12,
+            }),
+
+            option: (base, state) => ({
+              ...base,
+              borderRadius: 8,
+              marginBottom: 4,
+              backgroundColor: state.isSelected
+                ? '#4c7fca'
+                : state.isFocused
+                  ? '#f3f4f6'
+                  : '#fff',
+              color: state.isSelected ? '#fff' : '#111827',
+            }),
+          }}
+        />
+
+        <Select
+          className={styles.reactSelect}
+          classNamePrefix="react-select"
+          placeholder="Pesquisar pessoa..."
+          options={opcoesPessoas}
+          isSearchable={false}
+          value={
+            opcoesPessoas.find(op => op.value === filtroPessoa) || null
+          }
+
+          onChange={(opcao) => setFiltroPessoa(opcao?.value || '')}
+          styles={{
+            menu: (base) => ({
+              ...base,
+              borderRadius: 12,
+              overflow: 'hidden',
+            }),
+
+            control: (provided) => ({
+              ...provided,
+              borderRadius: 8,
+            }),
+
+            menuList: (base) => ({
+              ...base,
+              padding: 6,
+              borderRadius: 12,
+            }),
+
+            option: (base, state) => ({
+              ...base,
+              borderRadius: 8,
+              marginBottom: 4,
+              backgroundColor: state.isSelected
+                ? '#4c7fca'
+                : state.isFocused
+                  ? '#f3f4f6'
+                  : '#fff',
+              color: state.isSelected ? '#fff' : '#111827',
+            }),
+          }}
+        />
+
+        <Select
+          className={styles.reactSelect}
+          classNamePrefix="react-select"
+          placeholder="Setor"
+          isSearchable={false}
+          options={opcoesSetores}
+          value={opcoesSetores.find(op => op.value === filtroSetor) || null}
+          onChange={opcao => setFiltroSetor(opcao.value)}
+          styles={{
+            control: (provided) => ({
+              ...provided,
+              borderRadius: 8,
+            }),
+
+            menu: (base) => ({
+              ...base,
+              borderRadius: 12,
+              overflow: 'hidden',
+            }),
+
+            menuList: (base) => ({
+              ...base,
+              padding: 6,
+              borderRadius: 12,
+            }),
+
+            option: (base, state) => ({
+              ...base,
+              borderRadius: 8,
+              marginBottom: 4,
+              backgroundColor: state.isSelected
+                ? '#4c7fca'
+                : state.isFocused
+                  ? '#f3f4f6'
+                  : '#fff',
+              color: state.isSelected ? '#fff' : '#111827',
+            }),
+          }}
+        />
       </div>
 
       <div className={styles.tabela}>

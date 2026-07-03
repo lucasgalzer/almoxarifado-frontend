@@ -64,7 +64,7 @@ function Login() {
       <div className={styles.left}>
         <div className={styles.leftContent}>
           <img
-            src="/uploadlogo/Prancheta 1.png"
+            src="/uploadlogo/logo.png"
             alt="Logo"
             style={{ height: '50px', objectFit: 'contain', marginBottom: '24px' }}
             onError={e => e.target.style.display = 'none'}

@@ -6,6 +6,7 @@ import ModalHistoricoPessoa from '../components/ModalHistoricoPessoa'
 import ModalConfirmacao from '../components/ModalConfirmacao'
 import { useToast } from '../components/Toast'
 import styles from './Pessoas.module.css'
+import Select from 'react-select'
 
 function Pessoas() {
   const { addToast } = useToast()
@@ -20,6 +21,21 @@ function Pessoas() {
   const [modalCSVAberto, setModalCSVAberto] = useState(false)
   const [pessoaHistorico, setPessoaHistorico] = useState(null)
   const [pessoaExcluindo, setPessoaExcluindo] = useState(null)
+
+
+  const opcoesSetores = [
+    { value: '', label: 'Todos os setores' },
+    ...setores.map(setor => ({
+      value: setor,
+      label: setor,
+    })),
+  ]
+
+  const opcoesAtivo = [
+    { value: '', label: 'Todos' },
+    { value: 'true', label: 'Ativos' },
+    { value: 'false', label: 'Inativos' },
+  ]
 
   useEffect(() => {
     carregarPessoas()
@@ -109,15 +125,84 @@ function Pessoas() {
           onChange={e => setBusca(e.target.value)}
           className={styles.inputBusca}
         />
-        <select value={filtroSetor} onChange={e => setFiltroSetor(e.target.value)} className={styles.select}>
-          <option value="">Todos os setores</option>
-          {setores.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-        <select value={filtroAtivo} onChange={e => setFiltroAtivo(e.target.value)} className={styles.select}>
-          <option value="">Todos</option>
-          <option value="true">Ativos</option>
-          <option value="false">Inativos</option>
-        </select>
+        <Select
+          className={styles.reactSelect}
+          classNamePrefix="react-select"
+          placeholder="Todos os setores"
+          options={opcoesSetores}
+          isSearchable={false}
+          value={opcoesSetores.find(op => op.value === filtroSetor) || null}
+          onChange={(opcao) => setFiltroSetor(opcao?.value || '')}
+         styles={{
+            control: (provided) => ({
+              ...provided,
+              borderRadius: 8,
+            }),
+
+            menu: (base) => ({
+              ...base,
+              borderRadius: 12,
+              overflow: 'hidden',
+            }),
+
+            menuList: (base) => ({
+              ...base,
+              padding: 6,
+              borderRadius: 12,
+            }),
+
+            option: (base, state) => ({
+              ...base,
+              borderRadius: 8,
+              marginBottom: 4,
+              backgroundColor: state.isSelected
+                ? '#4c7fca'
+                : state.isFocused
+                  ? '#f3f4f6'
+                  : '#fff',
+              color: state.isSelected ? '#fff' : '#111827',
+            }),
+          }}
+        />
+        <Select
+          className={styles.reactSelect}
+          classNamePrefix="react-select"
+          placeholder="Todos"
+          isSearchable={false}
+          options={opcoesAtivo}
+          value={opcoesAtivo.find(op => op.value === filtroAtivo)}
+          onChange={(opcao) => setFiltroAtivo(opcao?.value || '')}
+             styles={{
+            control: (provided) => ({
+              ...provided,
+              borderRadius: 8,
+            }),
+
+            menu: (base) => ({
+              ...base,
+              borderRadius: 12,
+              overflow: 'hidden',
+            }),
+
+            menuList: (base) => ({
+              ...base,
+              padding: 6,
+              borderRadius: 12,
+            }),
+
+            option: (base, state) => ({
+              ...base,
+              borderRadius: 8,
+              marginBottom: 4,
+              backgroundColor: state.isSelected
+                ? '#4c7fca'
+                : state.isFocused
+                  ? '#f3f4f6'
+                  : '#fff',
+              color: state.isSelected ? '#fff' : '#111827',
+            }),
+          }}
+        />
       </div>
 
       <div className={styles.tabela}>
