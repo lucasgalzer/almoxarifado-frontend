@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react'
 import styles from './Login.module.css'
+import api from '../services/api'
 
 function Login() {
   const navigate = useNavigate()
@@ -17,7 +18,7 @@ function Login() {
     }
   }, [])
 
-  async function handleSubmit(e) {
+async function handleSubmit(e) {
   e.preventDefault()
   setErro('')
 
@@ -27,21 +28,13 @@ function Login() {
   }
 
   setCarregando(true)
+
   try {
-    const response = await fetch('http://localhost:3333/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, senha })
+    const { data } = await api.post('/auth/login', {
+      email,
+      senha,
     })
 
-    const data = await response.json()
-
-    if (!response.ok) {
-      setErro(data.erro || 'Erro ao fazer login')
-      return
-    }
-
-    // Salva só o token — dados do usuário ficam no JWT
     localStorage.setItem('token', data.token)
     localStorage.removeItem('usuario')
     localStorage.removeItem('usuario_super_admin')
@@ -53,8 +46,9 @@ function Login() {
     } else {
       navigate('/dashboard')
     }
-  } catch {
-    setErro('Não foi possível conectar ao servidor')
+
+  } catch (error) {
+    setErro(error.response?.data?.erro || 'Não foi possível conectar ao servidor')
   } finally {
     setCarregando(false)
   }
@@ -66,7 +60,7 @@ function Login() {
           <img
             src="/uploadlogo/logo.png"
             alt="Logo"
-            style={{ height: '50px', objectFit: 'contain', marginBottom: '24px' }}
+            style={{ height: '70px', objectFit: 'contain', marginBottom: '24px' }}
             onError={e => e.target.style.display = 'none'}
           />
 
@@ -148,7 +142,7 @@ function Login() {
           </form>
 
           <p className={styles.footer}>
-            Sistema de Almoxarifado Escolar © {new Date().getFullYear()}
+            Desenvolvido por Colégio Teutônia © {new Date().getFullYear()}
           </p>
         </div>
       </div>

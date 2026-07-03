@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
 import styles from './ModalProduto.module.css'
+import Select from 'react-select'
+import reactSelectStyles from '../utils/reactSelectStyles'
 
-const TIPOS = [
+const opcoesEstoque = [
   { value: 'entrada', label: 'Entrada (aumenta estoque)' },
   { value: 'saida', label: 'Saída (diminui estoque)' },
   { value: 'ajuste', label: 'Ajuste (define quantidade exata)' },
@@ -22,6 +24,18 @@ function ModalMovimentacao({ produtos, onFechar, onSalvar }) {
     observacoes: '',
     pessoa_id: '',
   })
+
+  const opcoesPessoas = pessoas.map(p => ({
+    value: p.id,
+    label: `${p.nome_completo}${p.setor ? ` — ${p.setor}` : ''}`,
+  }))
+
+  const opcoesProdutos = produtos.map(p => ({
+    value: p.id,
+    label: `${p.nome}${p.codigo_interno ? ` (${p.codigo_interno})` : ''}`,
+  }))
+
+
 
   useEffect(() => {
     api.get('/pessoas').then(({ data }) => setPessoas(data)).catch(console.error)
@@ -65,22 +79,43 @@ function ModalMovimentacao({ produtos, onFechar, onSalvar }) {
 
           <div className={styles.campo}>
             <label>Produto *</label>
-            <select name="produto_id" value={form.produto_id} onChange={handleChange}>
-              <option value="">Selecione um produto</option>
-              {produtos.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.codigo_interno} — {p.nome} (Atual: {p.quantidade_atual} {p.unidade_medida})
-                </option>
-              ))}
-            </select>
+            <Select
+              className={styles.reactSelect}
+              classNamePrefix="react-select"
+              styles={reactSelectStyles}
+              placeholder="Selecione um Produto"
+              options={opcoesProdutos}
+              value={opcoesProdutos.find(op => op.value === form.produto_id) || null}
+              onChange={(opcao) =>
+                handleChange({
+                  target: {
+                    name: 'produto_id',
+                    value: opcao?.value || '',
+                  },
+                })
+              }
+            />
           </div>
 
           <div className={styles.grid2}>
             <div className={styles.campo}>
               <label>Tipo *</label>
-              <select name="tipo" value={form.tipo} onChange={handleChange}>
-                {TIPOS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
+              <Select
+                className={styles.reactSelect}
+                classNamePrefix="react-select"
+                styles={reactSelectStyles}
+                placeholder="Selecione uma categoria"
+                options={opcoesEstoque}
+                value={opcoesEstoque.find(op => op.value === form.tipo) || null}
+                onChange={(opcao) =>
+                  handleChange({
+                    target: {
+                      name: 'tipo',
+                      value: opcao?.value || '',
+                    },
+                  })
+                }
+              />
             </div>
             <div className={styles.campo}>
               <label>
@@ -108,12 +143,23 @@ function ModalMovimentacao({ produtos, onFechar, onSalvar }) {
 
           <div className={styles.campo}>
             <label>Pessoa (opcional)</label>
-            <select name="pessoa_id" value={form.pessoa_id} onChange={handleChange}>
-              <option value="">Sem vínculo com pessoa</option>
-              {pessoas.map(p => (
-                <option key={p.id} value={p.id}>{p.nome_completo}</option>
-              ))}
-            </select>
+            <Select
+              className={styles.reactSelect}
+              classNamePrefix="react-select"
+              styles={reactSelectStyles}
+              placeholder="Selecione uma pessoa"
+              options={opcoesPessoas}
+              value={opcoesPessoas.find(op => op.value === form.pessoa_id) || null}
+              onChange={(opcao) =>
+                handleChange({
+                  target: {
+                    name: 'pessoa_id',
+                    value: opcao?.value || '',
+                  },
+                })
+              }
+              isClearable
+            />
           </div>
 
           <div className={styles.campo}>

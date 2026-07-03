@@ -3,6 +3,8 @@ import api from '../services/api'
 import ModalConfirmacao from '../components/ModalConfirmacao'
 import { useToast } from '../components/Toast'
 import styles from './Configuracoes.module.css'
+import Select from 'react-select'
+import reactSelectStyles from '../utils/reactSelectStyles'
 
 function ajustarCor(hex, percent) {
   const num = parseInt(hex.replace('#', ''), 16)
@@ -35,6 +37,12 @@ function Configuracoes() {
     logo_base64: '',
   })
 
+  const opcoesTipoControle = [
+  { value: 'quantidade', label: 'Por quantidade' },
+  { value: 'individual', label: 'Por unidade individual' },
+]
+
+
   const [novaCategoria, setNovaCategoria] = useState({ nome: '', descricao: '', tipo_controle: 'quantidade' })
   const [editandoCategoria, setEditandoCategoria] = useState(null)
   const [erroCategoria, setErroCategoria] = useState('')
@@ -49,6 +57,7 @@ function Configuracoes() {
   const [estoqueMinimoEditando, setEstoqueMinimoEditando] = useState(null)
   const [novoMinimo, setNovoMinimo] = useState('')
 
+  
   useEffect(() => {
     carregarCategorias()
     carregarProdutos()
@@ -297,15 +306,22 @@ function Configuracoes() {
               <div className={styles.formRow}>
   <input placeholder="Nome da categoria *" value={novaCategoria.nome} onChange={e => setNovaCategoria(prev => ({ ...prev, nome: e.target.value }))} className={styles.input} />
   <input placeholder="Descrição (opcional)" value={novaCategoria.descricao} onChange={e => setNovaCategoria(prev => ({ ...prev, descricao: e.target.value }))} className={styles.input} />
-  <select
-    value={novaCategoria.tipo_controle}
-    onChange={e => setNovaCategoria(prev => ({ ...prev, tipo_controle: e.target.value }))}
-    className={styles.input}
-    style={{ maxWidth: '200px' }}
-  >
-    <option value="quantidade">Por quantidade</option>
-    <option value="individual">Por unidade individual</option>
-  </select>
+<Select
+  className={styles.reactSelect}
+  classNamePrefix="react-select"
+  styles={reactSelectStyles}
+  isSearchable={false}
+  options={opcoesTipoControle}
+  value={opcoesTipoControle.find(
+    op => op.value === novaCategoria.tipo_controle
+  )}
+  onChange={(opcao) =>
+    setNovaCategoria(prev => ({
+      ...prev,
+      tipo_controle: opcao?.value || 'quantidade',
+    }))
+  }
+/>
   <button type="submit" disabled={carregando} className={styles.btnSalvar}>{carregando ? '...' : editandoCategoria ? 'Atualizar' : 'Adicionar'}</button>
   {editandoCategoria && (
     <button type="button" onClick={() => { setEditandoCategoria(null); setNovaCategoria({ nome: '', descricao: '', tipo_controle: 'quantidade' }) }} className={styles.btnCancelar}>Cancelar</button>

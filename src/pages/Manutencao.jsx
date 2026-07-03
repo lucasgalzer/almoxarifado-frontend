@@ -4,6 +4,7 @@ import ModalManutencao from '../components/ModalManutencao'
 import ModalAtualizarManutencao from '../components/ModalAtualizarManutencao'
 import styles from './Manutencao.module.css'
 import Select from 'react-select'
+import reactSelectStyles from '../utils/reactSelectStyles'
 
 function Manutencao() {
   const [manutencoes, setManutencoes] = useState([])
@@ -79,7 +80,7 @@ function Manutencao() {
 
       {emAberto > 0 && (
         <div className={styles.alerta}>
-          🔧 {emAberto} item(ns) em manutenção — bloqueados para empréstimo
+          {emAberto} item(ns) em manutenção — bloqueados para empréstimo
         </div>
       )}
 
@@ -87,40 +88,11 @@ function Manutencao() {
         <Select
           className={styles.reactSelect}
           classNamePrefix="react-select"
+          styles={reactSelectStyles}
           isSearchable={false}
           options={opcoesStatus}
           value={opcoesStatus.find(op => op.value === filtroStatus)}
           onChange={(opcao) => setFiltroStatus(opcao?.value || '')}
-          styles={{
-                        control: (provided) => ({
-                          ...provided,
-                          borderRadius: 8,
-                        }),
-            
-                        menu: (base) => ({
-                          ...base,
-                          borderRadius: 12,
-                          overflow: 'hidden',
-                        }),
-            
-                        menuList: (base) => ({
-                          ...base,
-                          padding: 6,
-                          borderRadius: 12,
-                        }),
-            
-                        option: (base, state) => ({
-                          ...base,
-                          borderRadius: 8,
-                          marginBottom: 4,
-                          backgroundColor: state.isSelected
-                            ? '#4c7fca'
-                            : state.isFocused
-                              ? '#f3f4f6'
-                              : '#fff',
-                          color: state.isSelected ? '#fff' : '#111827',
-                        }),
-                      }}
         />
       </div>
 

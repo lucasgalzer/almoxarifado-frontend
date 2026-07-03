@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import api from '../services/api'
 import { useToast } from './Toast'
 import styles from './ModalProduto.module.css'
+import Select from 'react-select'
+import reactSelectStyles from '../utils/reactSelectStyles'
 
 function ModalEmprestimo({ onFechar, onSalvar }) {
   const { addToast } = useToast()
@@ -17,6 +19,11 @@ function ModalEmprestimo({ onFechar, onSalvar }) {
     pessoa_id: '',
     observacoes: '',
   })
+
+  const opcoesPessoas = pessoas.map(p => ({
+  value: p.id,
+  label: `${p.nome_completo}${p.setor ? ` — ${p.setor}` : ''}`,
+}))
 
   useEffect(() => {
     api.get('/pessoas', { params: { ativo: true } })
@@ -145,15 +152,24 @@ function ModalEmprestimo({ onFechar, onSalvar }) {
 
           <div className={styles.campo}>
             <label>Solicitante *</label>
-            <select name="pessoa_id" value={form.pessoa_id} onChange={handleChange}>
-              <option value="">Selecione uma pessoa</option>
-              {pessoas.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.nome_completo} {p.setor ? `— ${p.setor}` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
+            <Select
+  className={styles.reactSelect}
+  classNamePrefix="react-select"
+  styles={reactSelectStyles}
+  placeholder="Selecione uma pessoa"
+  options={opcoesPessoas}
+  value={opcoesPessoas.find(op => op.value === form.pessoa_id) || null}
+  onChange={(opcao) =>
+    handleChange({
+      target: {
+        name: 'pessoa_id',
+        value: opcao?.value || '',
+      },
+    })
+  }
+  isClearable
+/>
+</div>
 
           <div className={styles.campo}>
             <label>Observações</label>

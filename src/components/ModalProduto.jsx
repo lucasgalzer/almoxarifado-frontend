@@ -2,11 +2,9 @@ import { useState, useEffect } from 'react'
 import api from '../services/api'
 import { useToast } from './Toast'
 import styles from './ModalProduto.module.css'
+import Select from 'react-select'
+import reactSelectStyles from '../utils/reactSelectStyles'
 
-const TIPOS = [
-  { value: 'consumivel', label: 'Consumível' },
-  { value: 'reutilizavel', label: 'Reutilizável' },
-]
 
 function ModalProduto({ produto, onFechar, onSalvar }) {
   const { addToast } = useToast()
@@ -29,6 +27,19 @@ function ModalProduto({ produto, onFechar, onSalvar }) {
     status: 'disponivel',
     observacoes: '',
   })
+
+  const opcoesCategorias = [
+  { value: '', label: 'Selecione uma categoria' },
+  ...categorias.map(c => ({
+    value: c.id,
+    label: c.nome,
+  })),
+]
+
+const opcoesTipo = [
+  { value: 'Consumível', label: 'Consumível' },
+  { value: 'Reutilizável', label: 'Objeto' },
+]
 
   const [camposExtras, setCamposExtras] = useState({})
 
@@ -217,9 +228,22 @@ function ModalProduto({ produto, onFechar, onSalvar }) {
             </div>
             <div className={styles.campo}>
               <label>Tipo *</label>
-              <select name="tipo" value={form.tipo} onChange={handleChange}>
-                {TIPOS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
+              <Select
+  className={styles.reactSelect}
+  classNamePrefix="react-select"
+  placeholder="Selecione uma categoria"
+  styles={reactSelectStyles}
+  options={opcoesTipo}
+  value={opcoesTipo.find(op => op.value === form.tipo) || null}
+  onChange={(opcao) =>
+    handleChange({
+      target: {
+        name: 'tipo',
+        value: opcao?.value || '',
+      },
+    })
+  }
+/>
             </div>
           </div>
 
@@ -235,10 +259,22 @@ function ModalProduto({ produto, onFechar, onSalvar }) {
 
           <div className={styles.campo}>
             <label>Categoria *</label>
-            <select name="categoria_id" value={form.categoria_id} onChange={handleChange}>
-              <option value="">Selecione uma categoria</option>
-              {categorias.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-            </select>
+            <Select
+  className={styles.reactSelect}
+  classNamePrefix="react-select"
+  styles={reactSelectStyles}
+  placeholder="Selecione uma categoria"
+  options={opcoesCategorias}
+  value={opcoesCategorias.find(op => op.value === form.categoria_id) || null}
+  onChange={(opcao) =>
+    handleChange({
+      target: {
+        name: 'categoria_id',
+        value: opcao?.value || '',
+      },
+    })
+  }
+/>
           </div>
 
           {form.categoria_id && (

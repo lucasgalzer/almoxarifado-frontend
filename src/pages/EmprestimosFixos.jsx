@@ -4,6 +4,7 @@ import { useToast } from '../components/Toast'
 import ModalConfirmacao from '../components/ModalConfirmacao'
 import styles from './EmprestimosFixos.module.css'
 import Select from 'react-select'
+import reactSelectStyles from '../utils/reactSelectStyles'
 
 function EmprestimosFixos() {
   const { addToast } = useToast()
@@ -187,40 +188,11 @@ function EmprestimosFixos() {
         <Select
   className={styles.reactSelect}
   classNamePrefix="react-select"
+  styles={reactSelectStyles}
   isSearchable={false}
   options={opcoesStatus}
   value={opcoesStatus.find(op => op.value === filtroStatus)}
   onChange={(opcao) => setFiltroStatus(opcao?.value || '')}
-  styles={{
-              control: (provided) => ({
-                ...provided,
-                borderRadius: 8,
-              }),
-  
-              menu: (base) => ({
-                ...base,
-                borderRadius: 12,
-                overflow: 'hidden',
-              }),
-  
-              menuList: (base) => ({
-                ...base,
-                padding: 6,
-                borderRadius: 12,
-              }),
-  
-              option: (base, state) => ({
-                ...base,
-                borderRadius: 8,
-                marginBottom: 4,
-                backgroundColor: state.isSelected
-                  ? '#4c7fca'
-                  : state.isFocused
-                    ? '#f3f4f6'
-                    : '#fff',
-                color: state.isSelected ? '#fff' : '#111827',
-              }),
-            }}
 />
       </div>
 

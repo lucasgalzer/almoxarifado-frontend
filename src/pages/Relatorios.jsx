@@ -4,6 +4,7 @@ import styles from './Relatorios.module.css'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import Select from 'react-select'
+import reactSelectStyles from '../utils/reactSelectStyles'
 
 const ABAS = [
   { id: 'estoque', label: 'Estoque atual' },
@@ -241,6 +242,7 @@ const opcoesStatusManutencao = [
              <Select
       className={styles.reactSelect}
       classNamePrefix="react-select"
+      styles={reactSelectStyles}
       isSearchable={false}
       options={opcoesTipoMovimentacao}
       value={opcoesTipoMovimentacao.find(op => op.value === filtros.tipo)}
@@ -252,36 +254,6 @@ const opcoesStatusManutencao = [
           }
         })
       }
-      styles={{
-                              control: (provided) => ({
-                                ...provided,
-                                borderRadius: 8,
-                              }),
-                  
-                              menu: (base) => ({
-                                ...base,
-                                borderRadius: 12,
-                                overflow: 'hidden',
-                              }),
-                  
-                              menuList: (base) => ({
-                                ...base,
-                                padding: 6,
-                                borderRadius: 12,
-                              }),
-                  
-                              option: (base, state) => ({
-                                ...base,
-                                borderRadius: 8,
-                                marginBottom: 4,
-                                backgroundColor: state.isSelected
-                                  ? '#4c7fca'
-                                  : state.isFocused
-                                    ? '#f3f4f6'
-                                    : '#fff',
-                                color: state.isSelected ? '#fff' : '#111827',
-                              }),
-                            }}
     />
   </div>
         )}
@@ -292,6 +264,7 @@ const opcoesStatusManutencao = [
             <Select
       className={styles.reactSelect}
       classNamePrefix="react-select"
+      styles={reactSelectStyles}
       isSearchable={false}
       options={opcoesStatusEmprestimo}
       value={opcoesStatusEmprestimo.find(op => op.value === filtros.status)}
@@ -303,36 +276,6 @@ const opcoesStatusManutencao = [
           }
         })
       }
-      styles={{
-                              control: (provided) => ({
-                                ...provided,
-                                borderRadius: 8,
-                              }),
-                  
-                              menu: (base) => ({
-                                ...base,
-                                borderRadius: 12,
-                                overflow: 'hidden',
-                              }),
-                  
-                              menuList: (base) => ({
-                                ...base,
-                                padding: 6,
-                                borderRadius: 12,
-                              }),
-                  
-                              option: (base, state) => ({
-                                ...base,
-                                borderRadius: 8,
-                                marginBottom: 4,
-                                backgroundColor: state.isSelected
-                                  ? '#4c7fca'
-                                  : state.isFocused
-                                    ? '#f3f4f6'
-                                    : '#fff',
-                                color: state.isSelected ? '#fff' : '#111827',
-                              }),
-                            }}
     />
   </div>
          
@@ -344,6 +287,7 @@ const opcoesStatusManutencao = [
              <Select
       className={styles.reactSelect}
       classNamePrefix="react-select"
+      styles={reactSelectStyles}
       isSearchable={false}
       options={opcoesStatusManutencao}
       value={opcoesStatusManutencao.find(op => op.value === filtros.status)}
@@ -355,36 +299,6 @@ const opcoesStatusManutencao = [
           }
         })
       }
-      styles={{
-                        control: (provided) => ({
-                          ...provided,
-                          borderRadius: 8,
-                        }),
-            
-                        menu: (base) => ({
-                          ...base,
-                          borderRadius: 12,
-                          overflow: 'hidden',
-                        }),
-            
-                        menuList: (base) => ({
-                          ...base,
-                          padding: 6,
-                          borderRadius: 12,
-                        }),
-            
-                        option: (base, state) => ({
-                          ...base,
-                          borderRadius: 8,
-                          marginBottom: 4,
-                          backgroundColor: state.isSelected
-                            ? '#52b61b'
-                            : state.isFocused
-                              ? '#f3f4f6'
-                              : '#fff',
-                          color: state.isSelected ? '#fff' : '#111827',
-                        }),
-                      }}
     />
           </div>
         )}

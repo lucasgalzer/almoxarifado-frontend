@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import api from '../services/api'
 import styles from './ModalProduto.module.css'
 import estilos from './ModalSolicitacao.module.css'
+import Select from 'react-select'
+import reactSelectStyles from '../utils/reactSelectStyles'
 
 function ModalSolicitacao({ onFechar, onSalvar }) {
   const [produtos, setProdutos] = useState([])
@@ -30,6 +32,11 @@ function ModalSolicitacao({ onFechar, onSalvar }) {
       i === index ? { ...item, [field]: value } : item
     ))
   }
+
+  const opcoesProdutos = produtos.map(p => ({
+    value: p.id,
+    label: `${p.nome}${p.codigo_interno ? ` (${p.codigo_interno})` : ''}`,
+  }))
 
   function adicionarItem() {
     setItens(prev => [...prev, { produto_id: '', quantidade_solicitada: 1 }])
@@ -73,18 +80,22 @@ function ModalSolicitacao({ onFechar, onSalvar }) {
             <label>Itens solicitados *</label>
             {itens.map((item, index) => (
               <div key={index} className={estilos.itemLinha}>
-                <select
-                  value={item.produto_id}
-                  onChange={e => handleItemChange(index, 'produto_id', e.target.value)}
-                  className={estilos.selectProduto}
-                >
-                  <option value="">Selecione um produto</option>
-                  {produtos.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.codigo_interno} — {p.nome}
-                    </option>
-                  ))}
-                </select>
+                <Select
+              className={styles.reactSelect}
+              classNamePrefix="react-select"
+              styles={reactSelectStyles}
+              placeholder="Selecione um Produto"
+              options={opcoesProdutos}
+              value={opcoesProdutos.find(op => op.value === form.produto_id) || null}
+              onChange={(opcao) =>
+                handleChange({
+                  target: {
+                    name: 'produto_id',
+                    value: opcao?.value || '',
+                  },
+                })
+              }
+            />
                 <input
                   type="number"
                   min="1"
