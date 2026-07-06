@@ -3,6 +3,8 @@ import api from '../services/api'
 import ModalConfirmacao from '../components/ModalConfirmacao'
 import { useToast } from '../components/Toast'
 import styles from './Usuarios.module.css'
+import Select from 'react-select'
+import reactSelectStyles from '../utils/reactSelectStyles'
 
 const PERFIS = [
   { value: 'admin', label: 'Administrador' },
@@ -205,11 +207,22 @@ function Usuarios() {
 
               <div className={styles.campo}>
                 <label>Perfil *</label>
-                <select name="perfil" value={form.perfil} onChange={handleChange}>
-                  {PERFIS.map(p => (
-                    <option key={p.value} value={p.value}>{p.label}</option>
-                  ))}
-                </select>
+                <Select
+                className={styles.reactSelect}
+                classNamePrefix="react-select"
+                styles={reactSelectStyles}
+                placeholder="Selecione o perfil"
+                options={PERFIS}
+                value={PERFIS.find(op => op.value === form.perfil) || null}
+                onChange={(opcao) =>
+                  handleChange({
+                    target: {
+                      name: 'perfil',
+                      value: opcao?.value || '',
+                    },
+                  })
+                }
+              />
               </div>
 
               <div className={styles.modalAcoes}>

@@ -35,7 +35,16 @@ function ModalMovimentacao({ produtos, onFechar, onSalvar }) {
     label: `${p.nome}${p.codigo_interno ? ` (${p.codigo_interno})` : ''}`,
   }))
 
+  
 
+function handleChange(e) {
+  const { name, value } = e.target
+
+  setForm(prev => ({
+    ...prev,
+    [name]: value,
+  }))
+}
 
   useEffect(() => {
     api.get('/pessoas').then(({ data }) => setPessoas(data)).catch(console.error)
@@ -45,6 +54,7 @@ function ModalMovimentacao({ produtos, onFechar, onSalvar }) {
     const { name, value } = e.target
     setForm(prev => ({ ...prev, [name]: value }))
   }
+  
 
   const produtoSelecionado = produtos.find(p => p.id === form.produto_id)
 

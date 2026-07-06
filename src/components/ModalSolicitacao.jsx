@@ -16,11 +16,11 @@ function ModalSolicitacao({ onFechar, onSalvar }) {
     observacoes: '',
   })
 
- useEffect(() => {
-  api.get('/produtos', { params: { tipo: 'reutilizavel' } })
-    .then(({ data }) => setProdutos(data.dados || []))
-    .catch(console.error)
-}, [])
+  useEffect(() => {
+    api.get('/produtos', { params: { tipo: 'reutilizavel' } })
+      .then(({ data }) => setProdutos(data.dados || []))
+      .catch(console.error)
+  }, [])
 
   function handleFormChange(e) {
     const { name, value } = e.target
@@ -33,7 +33,7 @@ function ModalSolicitacao({ onFechar, onSalvar }) {
     ))
   }
 
-  const opcoesProdutos = produtos.map(p => ({
+  const opcoes = produtos.map(p => ({
     value: p.id,
     label: `${p.nome}${p.codigo_interno ? ` (${p.codigo_interno})` : ''}`,
   }))
@@ -81,21 +81,16 @@ function ModalSolicitacao({ onFechar, onSalvar }) {
             {itens.map((item, index) => (
               <div key={index} className={estilos.itemLinha}>
                 <Select
-              className={styles.reactSelect}
-              classNamePrefix="react-select"
-              styles={reactSelectStyles}
-              placeholder="Selecione um Produto"
-              options={opcoesProdutos}
-              value={opcoesProdutos.find(op => op.value === form.produto_id) || null}
-              onChange={(opcao) =>
-                handleChange({
-                  target: {
-                    name: 'produto_id',
-                    value: opcao?.value || '',
-                  },
-                })
-              }
-            />
+                  className={styles.reactSelect}
+                  classNamePrefix="react-select"
+                  styles={reactSelectStyles}
+                  placeholder="Selecione um produto"
+                  options={opcoes}
+                  value={opcoes.find(op => op.value === item.produto_id) || null}
+                  onChange={(opcao) =>
+                    handleItemChange(index, 'produto_id', opcao?.value || '')
+                  }
+                />
                 <input
                   type="number"
                   min="1"

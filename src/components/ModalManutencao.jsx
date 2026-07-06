@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
 import styles from './ModalProduto.module.css'
+import Select from 'react-select'
+import reactSelectStyles from '../utils/reactSelectStyles'
 
 const TIPOS = [
   'Defeito mecânico', 'Defeito elétrico', 'Desgaste natural',
   'Dano por mau uso', 'Dano por queda', 'Outros'
 ]
+
+const opcoesProblemas = TIPOS.map(t => ({ value: t, label: t }))
 
 function ModalManutencao({ onFechar, onSalvar }) {
   const [produtos, setProdutos] = useState([])
@@ -21,16 +25,25 @@ function ModalManutencao({ onFechar, onSalvar }) {
     observacoes: '',
   })
 
- useEffect(() => {
-  api.get('/produtos', { params: { tipo: 'reutilizavel' } })
-    .then(({ data }) => setProdutos(data.dados || []))
-    .catch(console.error)
-}, [])
+  const opcoesProdutosM = produtos.map(p => ({
+    value: p.id,
+    label: `${p.nome}${p.codigo_interno ? ` (${p.codigo_interno})` : ''}`,
+  }))
+
+
+  useEffect(() => {
+    api.get('/produtos', { params: { tipo: 'reutilizavel' } })
+      .then(({ data }) => setProdutos(data.dados || []))
+      .catch(console.error)
+  }, [])
 
   function handleChange(e) {
     const { name, value } = e.target
     setForm(prev => ({ ...prev, [name]: value }))
   }
+
+
+
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -62,23 +75,43 @@ function ModalManutencao({ onFechar, onSalvar }) {
 
           <div className={styles.campo}>
             <label>Produto *</label>
-            <select name="produto_id" value={form.produto_id} onChange={handleChange}>
-              <option value="">Selecione um produto</option>
-              {produtos.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.codigo_interno} — {p.nome} (Status: {p.status})
-                </option>
-              ))}
-            </select>
+            <Select
+              className={styles.reactSelect}
+              classNamePrefix="react-select"
+              styles={reactSelectStyles}
+              placeholder="Selecione um Produto"
+              options={opcoesProdutosM}
+              value={opcoesProdutosM.find(op => op.value === form.produto_id) || null}
+              onChange={(opcao) =>
+                handleChange({
+                  target: {
+                    name: 'produto_id',
+                    value: opcao?.value || '',
+                  },
+                })
+              }
+            />
           </div>
 
           <div className={styles.grid2}>
             <div className={styles.campo}>
               <label>Tipo do problema *</label>
-              <select name="tipo_problema" value={form.tipo_problema} onChange={handleChange}>
-                <option value="">Selecione</option>
-                {TIPOS.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
+              <Select
+                className={styles.reactSelect}
+                classNamePrefix="react-select"
+                styles={reactSelectStyles}
+                placeholder="Selecione o tipo do problema"
+                options={opcoesProblemas}
+                value={opcoesProblemas.find(op => op.value === form.tipo_problema) || null}
+                onChange={(opcao) =>
+                  handleChange({
+                    target: {
+                      name: 'tipo_problema',
+                      value: opcao?.value || '',
+                    },
+                  })
+                }
+              />
             </div>
             <div className={styles.campo}>
               <label>Fornecedor / Técnico</label>
