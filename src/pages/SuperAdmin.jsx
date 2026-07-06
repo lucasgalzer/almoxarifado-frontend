@@ -4,7 +4,7 @@ import api from '../services/api'
 import useAuth from '../hooks/useAuth'
 import { useToast } from '../components/Toast'
 import styles from './SuperAdmin.module.css'
-import { Mail, Phone, Building2, Calendar, CheckCircle, XCircle } from 'lucide-react'
+import { Mail, Phone, Building2, Calendar, KeyRound, X } from 'lucide-react'
 
 function SuperAdmin() {
   const { usuario, logout } = useAuth()
@@ -119,18 +119,18 @@ function SuperAdmin() {
   }
 
   async function acessarEscola(inst) {
-  try {
-    const { data } = await api.post(`/super-admin/instituicoes/${inst.id}/acessar`)
-    localStorage.setItem('token_super_admin', localStorage.getItem('token'))
-    localStorage.setItem('token', data.token)
-    localStorage.removeItem('usuario')
-    localStorage.removeItem('usuario_super_admin')
-    navigate('/dashboard')
-    addToast(`Acessando como ${inst.nome}`, 'sucesso')
-  } catch (error) {
-    addToast(error.response?.data?.erro || 'Erro ao acessar escola', 'erro')
+    try {
+      const { data } = await api.post(`/super-admin/instituicoes/${inst.id}/acessar`)
+      localStorage.setItem('token_super_admin', localStorage.getItem('token'))
+      localStorage.setItem('token', data.token)
+      localStorage.removeItem('usuario')
+      localStorage.removeItem('usuario_super_admin')
+      navigate('/dashboard')
+      addToast(`Acessando como ${inst.nome}`, 'sucesso')
+    } catch (error) {
+      addToast(error.response?.data?.erro || 'Erro ao acessar escola', 'erro')
+    }
   }
-}
 
   function abrirEditar(inst) {
     setModalEditando(inst)
@@ -154,14 +154,14 @@ function SuperAdmin() {
   }
 
   const labelStyle = {
-    fontSize: '12px', fontWeight: '600', color: '#6b7280',
-    textTransform: 'uppercase', letterSpacing: '0.4px',
-    display: 'block', marginBottom: '5px'
+    fontSize: '11.5px', fontWeight: '600', color: '#6b6f85',
+    textTransform: 'uppercase', letterSpacing: '.4px',
+    display: 'block', marginBottom: '4px'
   }
 
   const secaoStyle = {
-    fontSize: '12px', fontWeight: '700', color: '#374151',
-    textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '8px'
+    fontSize: '11.5px', fontWeight: '700', color: '#12141c',
+    textTransform: 'uppercase', letterSpacing: '.5px', marginTop: '4px'
   }
 
   function labelPerfil(perfil) {
@@ -212,19 +212,19 @@ function SuperAdmin() {
                 </div>
 
                 <div className={styles.cardInfo}>
-  {inst.email && (
-    <p><Mail size={12} style={{ marginRight: '5px', verticalAlign: 'middle' }} />{inst.email}</p>
-  )}
-  {inst.telefone && (
-    <p><Phone size={12} style={{ marginRight: '5px', verticalAlign: 'middle' }} />{inst.telefone}</p>
-  )}
-  {inst.cnpj && (
-    <p><Building2 size={12} style={{ marginRight: '5px', verticalAlign: 'middle' }} />{inst.cnpj}</p>
-  )}
-  <p><Calendar size={12} style={{ marginRight: '5px', verticalAlign: 'middle' }} />
-    {new Date(inst.created_at).toLocaleDateString('pt-BR')}
-  </p>
-</div>
+                  {inst.email && (
+                    <p><Mail size={13} />{inst.email}</p>
+                  )}
+                  {inst.telefone && (
+                    <p><Phone size={13} />{inst.telefone}</p>
+                  )}
+                  {inst.cnpj && (
+                    <p><Building2 size={13} />{inst.cnpj}</p>
+                  )}
+                  <p><Calendar size={13} />
+                    {new Date(inst.created_at).toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
 
                 <div className={styles.cardStats}>
                   <div className={styles.stat}>
@@ -259,7 +259,7 @@ function SuperAdmin() {
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2>Nova Escola</h2>
-              <button className={styles.btnFechar} onClick={() => setModalAberto(false)}>✕</button>
+              <button className={styles.btnFechar} onClick={() => setModalAberto(false)}><X size={15} /></button>
             </div>
             <form onSubmit={handleSubmit} className={styles.modalForm}>
               {erro && <div className={styles.erro}>{erro}</div>}
@@ -314,7 +314,7 @@ function SuperAdmin() {
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2>Editar Escola</h2>
-              <button className={styles.btnFechar} onClick={() => setModalEditando(null)}>✕</button>
+              <button className={styles.btnFechar} onClick={() => setModalEditando(null)}><X size={15} /></button>
             </div>
             <form onSubmit={handleEditar} className={styles.modalForm}>
               {erro && <div className={styles.erro}>{erro}</div>}
@@ -353,58 +353,58 @@ function SuperAdmin() {
           <div className={styles.modal} style={{ maxWidth: '560px' }} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2>Usuários — {modalUsuarios.nome}</h2>
-              <button className={styles.btnFechar} onClick={() => setModalUsuarios(null)}>✕</button>
+              <button className={styles.btnFechar} onClick={() => setModalUsuarios(null)}><X size={15} /></button>
             </div>
             <div style={{ padding: '16px 24px', maxHeight: '70vh', overflowY: 'auto' }}>
               {carregandoUsuarios ? (
-                <p style={{ color: '#6b7280', textAlign: 'center', padding: '24px' }}>Carregando...</p>
+                <p style={{ color: '#6b6f85', textAlign: 'center', padding: '24px', fontSize: '13.5px' }}>Carregando...</p>
               ) : usuarios.length === 0 ? (
-                <p style={{ color: '#6b7280', textAlign: 'center', padding: '24px' }}>Nenhum usuário encontrado.</p>
+                <p style={{ color: '#6b6f85', textAlign: 'center', padding: '24px', fontSize: '13.5px' }}>Nenhum usuário encontrado.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {usuarios.map(u => (
-                    <div key={u.id} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px 14px' }}>
+                    <div key={u.id} style={{ border: '1px solid #e8e9ee', borderRadius: '10px', padding: '14px 16px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                         <div>
-                          <strong style={{ fontSize: '14px', color: '#111827' }}>{u.nome}</strong>
-                          <p style={{ fontSize: '12px', color: '#6b7280', margin: '2px 0' }}>{u.email}</p>
-                          <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-                            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '99px', background: '#eff6ff', color: '#2563eb', fontWeight: '600' }}>
+                          <strong style={{ fontSize: '13.5px', color: '#12141c', fontWeight: '700' }}>{u.nome}</strong>
+                          <p style={{ fontSize: '12px', color: '#6b6f85', margin: '2px 0' }}>{u.email}</p>
+                          <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                            <span style={{ fontSize: '10.5px', padding: '2px 9px', borderRadius: '6px', background: '#eef1fd', color: '#4f46e5', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '.2px' }}>
                               {labelPerfil(u.perfil)}
                             </span>
-                            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '99px', background: u.ativo ? '#f0fdf4' : '#fef2f2', color: u.ativo ? '#16a34a' : '#dc2626', fontWeight: '600' }}>
+                            <span style={{ fontSize: '10.5px', padding: '2px 9px', borderRadius: '6px', background: u.ativo ? '#eefcf3' : '#fdf2f1', color: u.ativo ? '#0f9d58' : '#c0362c', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '.2px' }}>
                               {u.ativo ? 'Ativo' : 'Inativo'}
                             </span>
                           </div>
                         </div>
                         <button
                           onClick={() => { setSenhaEditando(u.id); setNovaSenha('') }}
-                          style={{ padding: '5px 12px', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', fontWeight: '600', color: '#7c3aed', cursor: 'pointer' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f4f4f7', border: '1px solid #e8e9ee', borderRadius: '7px', fontSize: '12px', fontWeight: '600', color: '#4b4f63', cursor: 'pointer' }}
                         >
-                          Trocar senha
+                          <KeyRound size={12} /> Trocar senha
                         </button>
                       </div>
                       {senhaEditando === u.id && (
-                        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                           <input
                             type="password"
                             value={novaSenha}
                             onChange={e => setNovaSenha(e.target.value)}
                             placeholder="Nova senha (mín. 6 caracteres)"
                             autoFocus
-                            style={{ flex: 1, padding: '7px 10px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+                            style={{ flex: 1, padding: '8px 11px', border: '1px solid #d8d9e3', borderRadius: '7px', fontSize: '13px', outline: 'none' }}
                           />
                           <button
                             onClick={() => salvarSenha(u.id)}
-                            style={{ padding: '7px 14px', background: '#6366f1', border: 'none', borderRadius: '6px', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+                            style={{ padding: '8px 16px', background: '#4f46e5', border: 'none', borderRadius: '7px', color: 'white', fontSize: '12.5px', fontWeight: '600', cursor: 'pointer' }}
                           >
                             Salvar
                           </button>
                           <button
                             onClick={() => setSenhaEditando(null)}
-                            style={{ padding: '7px 10px', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}
+                            style={{ padding: '8px 10px', background: '#f4f4f7', border: '1px solid #e8e9ee', borderRadius: '7px', fontSize: '13px', cursor: 'pointer', color: '#4b4f63' }}
                           >
-                            ✕
+                            <X size={13} />
                           </button>
                         </div>
                       )}
@@ -413,7 +413,7 @@ function SuperAdmin() {
                 </div>
               )}
             </div>
-            <div style={{ padding: '12px 24px', borderTop: '1px solid #e5e7eb' }}>
+            <div style={{ padding: '12px 24px', borderTop: '1px solid #e8e9ee' }}>
               <button onClick={() => setModalUsuarios(null)} className={styles.btnCancelar} style={{ width: '100%' }}>Fechar</button>
             </div>
           </div>
