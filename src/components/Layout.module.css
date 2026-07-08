@@ -16,11 +16,18 @@
 
 .logo {
   display: flex;
+  justify-content: center;
   align-items: center;
-  gap: 20px;
-  padding: 20px 20px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  margin-bottom: 8px;
+  padding: 22px 18px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.logoImagem {
+  width: 170px;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
 }
 
 .logoIcon {

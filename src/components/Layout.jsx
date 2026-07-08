@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Users, Archive,
-  ArrowLeftRight, ClipboardList, Wrench,BookMarked, 
+  ArrowLeftRight, ClipboardList, Wrench, BookMarked,
   BarChart2, Settings, LogOut, Menu, X, Box, UserCog
 } from 'lucide-react'
 import useAuth from '../hooks/useAuth'
@@ -10,17 +10,17 @@ import api from '../services/api'
 import styles from './Layout.module.css'
 
 const menuItems = [
-  { path: '/dashboard',     label: 'Dashboard',     icon: LayoutDashboard, perfis: ['admin', 'operador'] },
-  { path: '/produtos',      label: 'Produtos',       icon: Package,         perfis: ['admin', 'operador'] },
-  { path: '/pessoas',       label: 'Pessoas',        icon: Users,           perfis: ['admin', 'operador'] },
-  { path: '/estoque',       label: 'Estoque',        icon: Archive,         perfis: ['admin', 'operador'] },
-  { path: '/emprestimos',   label: 'Empréstimos',    icon: ArrowLeftRight,  perfis: ['admin', 'operador'] },
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, perfis: ['admin', 'operador'] },
+  { path: '/produtos', label: 'Produtos', icon: Package, perfis: ['admin', 'operador'] },
+  { path: '/pessoas', label: 'Pessoas', icon: Users, perfis: ['admin', 'operador'] },
+  { path: '/estoque', label: 'Estoque', icon: Archive, perfis: ['admin', 'operador'] },
+  { path: '/emprestimos', label: 'Empréstimos', icon: ArrowLeftRight, perfis: ['admin', 'operador'] },
   { path: '/emprestimos-fixos', label: 'Empréstimos Fixos', icon: BookMarked, perfis: ['admin', 'operador'] },
-  { path: '/solicitacoes',  label: 'Solicitações',   icon: ClipboardList,   perfis: ['admin', 'operador'] },
-  { path: '/manutencao',    label: 'Manutenção',     icon: Wrench,          perfis: ['admin', 'operador'] },
-  { path: '/relatorios',    label: 'Relatórios',     icon: BarChart2,       perfis: ['admin', 'operador'] },
-  { path: '/configuracoes', label: 'Configurações',  icon: Settings,        perfis: ['admin'] },
-  { path: '/usuarios',      label: 'Usuários',       icon: UserCog,         perfis: ['admin'] },
+  { path: '/solicitacoes', label: 'Solicitações', icon: ClipboardList, perfis: ['admin', 'operador'] },
+  { path: '/manutencao', label: 'Manutenção', icon: Wrench, perfis: ['admin', 'operador'] },
+  { path: '/relatorios', label: 'Relatórios', icon: BarChart2, perfis: ['admin', 'operador'] },
+  { path: '/configuracoes', label: 'Configurações', icon: Settings, perfis: ['admin'] },
+  { path: '/usuarios', label: 'Usuários', icon: UserCog, perfis: ['admin'] },
 ]
 
 function ajustarCor(hex, percent) {
@@ -50,15 +50,15 @@ function Layout() {
         document.documentElement.style.setProperty('--color-secondary', data.cor_secundaria)
       }
       if (data.nome_exibicao) {
-  setNomeExibicao(data.nome_exibicao)
-  document.title = data.nome_exibicao
-} else {
-  document.title = 'Almoxarifado'
-}
+        setNomeExibicao(data.nome_exibicao)
+        document.title = data.nome_exibicao
+      } else {
+        document.title = 'Almoxarifado'
+      }
 
-if (data.logo_base64) {
-  setLogoBase64(data.logo_base64)
-}
+      if (data.logo_base64) {
+        setLogoBase64(data.logo_base64)
+      }
     }).catch(console.error)
   }, [])
 
@@ -67,13 +67,13 @@ if (data.logo_base64) {
     navigate('/login')
   }
 
-function voltarSuperAdmin() {
-  localStorage.setItem('token', localStorage.getItem('token_super_admin'))
-  localStorage.removeItem('token_super_admin')
-  localStorage.removeItem('usuario')
-  localStorage.removeItem('usuario_super_admin')
-  window.location.href = '/super-admin'
-}
+  function voltarSuperAdmin() {
+    localStorage.setItem('token', localStorage.getItem('token_super_admin'))
+    localStorage.removeItem('token_super_admin')
+    localStorage.removeItem('usuario')
+    localStorage.removeItem('usuario_super_admin')
+    window.location.href = '/super-admin'
+  }
   const itensFiltrados = menuItems.filter(item =>
     item.perfis.includes(usuario?.perfil)
   )
@@ -131,17 +131,13 @@ function voltarSuperAdmin() {
             <img
               src={logoBase64}
               alt="Logo"
-              style={{ height: '60px', objectFit: 'contain', maxWidth: '60px' }}
+              className={styles.logoImagem}
             />
           ) : (
             <div className={styles.logoIcon}>
-              <Box size={20} color="currentColor" />
+              <Box size={30} color="currentColor" />
             </div>
           )}
-          <div>
-            <span className={styles.logoTitle}>{nomeExibicao}</span>
-            <span className={styles.logoSub}>Almoxarifado</span>
-          </div>
         </div>
 
         <nav className={styles.nav}>
