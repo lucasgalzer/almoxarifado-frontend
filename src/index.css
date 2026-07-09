@@ -6,6 +6,8 @@
 
 :root {
   --color-primary: #7eb82c;
+  --color-menu: #ffffff;
+  --color-hover: #7eb82c;
   --color-primary-dark: #659922;
   --color-primary-light: #a6d96c;
   --color-secondary: #2b3742;
