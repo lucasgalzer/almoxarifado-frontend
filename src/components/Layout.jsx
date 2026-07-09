@@ -46,9 +46,18 @@ function Layout() {
         document.documentElement.style.setProperty('--color-primary-dark', ajustarCor(data.cor_primaria, -20))
         document.documentElement.style.setProperty('--color-primary-light', ajustarCor(data.cor_primaria, 20))
       }
+      if (data.cor_menu) {
+        document.documentElement.style.setProperty('--color-menu', data.cor_menu)
+      }
+
+      if (data.cor_hover) {
+        document.documentElement.style.setProperty('--color-hover', data.cor_hover)
+      }
+
       if (data.cor_secundaria) {
         document.documentElement.style.setProperty('--color-secondary', data.cor_secundaria)
       }
+
       if (data.nome_exibicao) {
         setNomeExibicao(data.nome_exibicao)
         document.title = data.nome_exibicao
