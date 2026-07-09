@@ -30,13 +30,14 @@ function Configuracoes() {
   const [logs, setLogs] = useState([])
   const [instituicao, setInstituicao] = useState(null)
   const [uploadando, setUploadando] = useState(false)
-  const [aparencia, setAparencia] = useState({
-    nome_exibicao: '',
-    cor_primaria: '#7eb82c',
-    cor_secundaria: '#2b3742',
-    logo_base64: '',
-  })
-
+const [aparencia, setAparencia] = useState({
+  nome_exibicao: '',
+  cor_primaria: '#7eb82c',
+  cor_secundaria: '#2b3742',
+  cor_menu: '#ffffff',
+  cor_hover: '#7eb82c',
+  logo_base64: '',
+})
   const opcoesTipoControle = [
   { value: 'quantidade', label: 'Por quantidade' },
   { value: 'individual', label: 'Por unidade individual' },
@@ -73,6 +74,8 @@ function Configuracoes() {
         nome_exibicao: data.nome_exibicao || '',
         cor_primaria: data.cor_primaria || '#7eb82c',
         cor_secundaria: data.cor_secundaria || '#2b3742',
+        cor_menu: data.cor_menu || '#ffffff',
+        cor_hover: data.cor_hover || '#7eb82c',
         logo_base64: data.logo_base64 || '',
       })
     } catch (error) {
@@ -187,6 +190,8 @@ function Configuracoes() {
       document.documentElement.style.setProperty('--color-primary-dark', ajustarCor(aparencia.cor_primaria, -20))
       document.documentElement.style.setProperty('--color-primary-light', ajustarCor(aparencia.cor_primaria, 20))
       document.documentElement.style.setProperty('--color-secondary', aparencia.cor_secundaria)
+      document.documentElement.style.setProperty('--color-menu', aparencia.cor_menu)
+      document.documentElement.style.setProperty('--color-hover', aparencia.cor_hover)      
       addToast('Aparência atualizada com sucesso!', 'sucesso')
     } catch (error) {
       addToast('Erro ao salvar aparência', 'erro')
@@ -526,6 +531,82 @@ function Configuracoes() {
                   </div>
                 </div>
               </div>
+              
+  <div style={{ display: 'flex', gap: '12px' }}>
+  <div style={{ flex: 1 }}>
+    <label style={labelStyle}>Cor do texto do menu</label>
+    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <input
+        type="color"
+        value={aparencia.cor_menu}
+        onChange={e =>
+          setAparencia(prev => ({
+            ...prev,
+            cor_menu: e.target.value,
+          }))
+        }
+        style={{
+          width: '48px',
+          height: '38px',
+          border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-md)',
+          cursor: 'pointer',
+          padding: '2px',
+        }}
+      />
+
+      <input
+        className={styles.input}
+        style={{ flex: 1 }}
+        value={aparencia.cor_menu}
+        onChange={e =>
+          setAparencia(prev => ({
+            ...prev,
+            cor_menu: e.target.value,
+          }))
+        }
+        placeholder="#ffffff"
+      />
+    </div>
+  </div>
+
+  <div style={{ flex: 1 }}>
+    <label style={labelStyle}>Cor do hover/menu ativo</label>
+    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <input
+        type="color"
+        value={aparencia.cor_hover}
+        onChange={e =>
+          setAparencia(prev => ({
+            ...prev,
+            cor_hover: e.target.value,
+          }))
+        }
+        style={{
+          width: '48px',
+          height: '38px',
+          border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-md)',
+          cursor: 'pointer',
+          padding: '2px',
+        }}
+      />
+
+      <input
+        className={styles.input}
+        style={{ flex: 1 }}
+        value={aparencia.cor_hover}
+        onChange={e =>
+          setAparencia(prev => ({
+            ...prev,
+            cor_hover: e.target.value,
+          }))
+        }
+        placeholder="#7eb82c"
+      />
+    </div>
+  </div>
+</div>
               <div>
                 <label style={labelStyle}>Logo da escola</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
