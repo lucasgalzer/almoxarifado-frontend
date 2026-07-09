@@ -37,9 +37,10 @@ function ModalProduto({ produto, onFechar, onSalvar }) {
 ]
 
 const opcoesTipo = [
-  { value: 'Consumível', label: 'Consumível' },
-  { value: 'Reutilizável', label: 'Objeto' },
+  { value: 'consumivel', label: 'Consumível' },
+  { value: 'reutilizavel', label: 'Objeto' },
 ]
+
 
   const [camposExtras, setCamposExtras] = useState({})
 
@@ -136,7 +137,7 @@ const opcoesTipo = [
         quantidade_atual: tipoControle === 'individual' ? 1 : form.quantidade_atual,
         quantidade_minima: tipoControle === 'individual' ? 0 : form.quantidade_minima,
       }
-
+console.log(form.tipo)
       if (produto) {
         await api.put(`/produtos/${produto.id}`, payload)
       } else {
