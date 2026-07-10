@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Users, Archive,
   ArrowLeftRight, ClipboardList, Wrench, BookMarked,
@@ -33,6 +33,7 @@ function ajustarCor(hex, percent) {
 
 function Layout() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { usuario, logout } = useAuth()
   const [menuAberto, setMenuAberto] = useState(false)
   const [nomeExibicao, setNomeExibicao] = useState('Escolar')
@@ -70,6 +71,44 @@ function Layout() {
       }
     }).catch(console.error)
   }, [])
+
+  useEffect(() => {
+  let timer
+
+  function reiniciarTimer() {
+    clearTimeout(timer)
+
+    timer = setTimeout(() => {
+
+      // Se já estiver no dashboard não faz nada
+      if (location.pathname === '/dashboard') return
+
+      // Verifica se existe algum modal aberto
+      const modalAberto = document.querySelector('[data-modal-open="true"]')
+
+      if (!modalAberto) {
+        navigate('/dashboard')
+      }
+
+    }, 20000)
+  }
+
+  reiniciarTimer()
+
+  window.addEventListener('mousemove', reiniciarTimer)
+  window.addEventListener('mousedown', reiniciarTimer)
+  window.addEventListener('keydown', reiniciarTimer)
+  window.addEventListener('touchstart', reiniciarTimer)
+
+  return () => {
+    clearTimeout(timer)
+
+    window.removeEventListener('mousemove', reiniciarTimer)
+    window.removeEventListener('mousedown', reiniciarTimer)
+    window.removeEventListener('keydown', reiniciarTimer)
+    window.removeEventListener('touchstart', reiniciarTimer)
+  }
+}, [navigate, location.pathname])
 
   function handleLogout() {
     logout()
@@ -170,12 +209,9 @@ function Layout() {
 
         <div className={styles.footer}>
           <div className={styles.usuarioInfo}>
-            <div className={styles.avatar}>
-              {usuario?.nome?.charAt(0).toUpperCase()}
-            </div>
+            
             <div>
               <span className={styles.usuarioNome}>{usuario?.nome}</span>
-              <span className={styles.usuarioPerfil}>{usuario?.perfil}</span>
             </div>
           </div>
           <button className={styles.logout} onClick={handleLogout}>

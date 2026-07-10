@@ -77,7 +77,7 @@ P003,Tesoura,reutilizavel,un,5,1,Gaveta C2,,Tesoura escolar`
       }
 
   return (
-    <div className={styles.overlay} onClick={onFechar}>
+    <div className={styles.overlay} data-modal-open="true" onClick={onFechar}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
           <h2>Importar {tipo === 'pessoas' ? 'Pessoas' : 'Produtos'} via CSV</h2>

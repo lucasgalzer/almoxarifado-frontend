@@ -1,8 +1,9 @@
 import styles from './ModalConfirmacao.module.css'
 
+
 function ModalConfirmacao({ titulo, mensagem, onConfirmar, onCancelar, tipo = 'perigo' }) {
   return (
-    <div className={styles.overlay} onClick={onCancelar}>
+    <div className={styles.overlay} data-modal-open="true" onClick={onFechar}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={`${styles.icone} ${styles[tipo]}`}>
           {tipo === 'perigo' ? '!' : '?'}

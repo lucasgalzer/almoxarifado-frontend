@@ -42,8 +42,8 @@ function ModalAtualizarManutencao({ manutencao, onFechar, onSalvar }) {
   }
 
   return (
-    <div className={styles.overlay} onClick={onFechar}>
-      <div className={estilos.modal} onClick={e => e.stopPropagation()}>
+<div className={styles.overlay} data-modal-open="true" onClick={onFechar}>
+        <div className={estilos.modal} onClick={e => e.stopPropagation()}>
         <div className={estilos.header}>
           <h2>Atualizar Manutenção</h2>
           <button className={estilos.btnFechar} onClick={onFechar}>✕</button>

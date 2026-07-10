@@ -5,7 +5,7 @@
 
 .left {
   flex: 1;
-  background: var(--color-secondary);
+  background: #2b3742;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -97,7 +97,7 @@
 .featureDot {
   width: 8px;
   height: 8px;
-  background: var(--color-primary);
+  background:#659922;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -192,7 +192,7 @@
   justify-content: center;
   gap: 8px;
   padding: 12px;
-  background: var(--color-primary);
+  background: #7eb82c;
   color: white;
   border: none;
   border-radius: var(--radius-md);
@@ -203,7 +203,7 @@
 }
 
 .botao:hover:not(:disabled) {
-  background: var(--color-primary-dark);
+  background: #659922;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(126,184,44,0.3);
 }

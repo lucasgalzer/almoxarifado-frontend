@@ -43,7 +43,7 @@ function ModalDetalhesSolicitacao({ solicitacao, onFechar, onAtualizar }) {
   }[solicitacao.status] || []
 
   return (
-    <div className={styles.overlay} onClick={onFechar}>
+    <div className={styles.overlay} data-modal-open="true" onClick={onFechar}>
       <div className={estilos.modal} onClick={e => e.stopPropagation()}>
         <div className={estilos.header}>
           <h2>Detalhes da Solicitação</h2>

@@ -87,7 +87,7 @@ function ModalEtiquetaLote({ produtos, onFechar }) {
   }
 
   return (
-    <div className={styles.overlay} onClick={onFechar}>
+    <div className={styles.overlay} data-modal-open="true" onClick={onFechar}>
       <div className={styles.modal} style={{ maxWidth: '660px' }} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
           <h2>Etiquetas em lote ({produtos.length})</h2>

@@ -63,7 +63,7 @@ function ModalManutencao({ onFechar, onSalvar }) {
   }
 
   return (
-    <div className={styles.overlay} onClick={onFechar}>
+    <div className={styles.overlay} data-modal-open="true" onClick={onFechar}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
           <h2>Nova Ocorrência de Manutenção</h2>
