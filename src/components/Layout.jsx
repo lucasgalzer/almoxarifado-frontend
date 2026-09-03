@@ -38,6 +38,7 @@ function Layout() {
   const [menuAberto, setMenuAberto] = useState(false)
   const [nomeExibicao, setNomeExibicao] = useState('Escolar')
   const [logoBase64, setLogoBase64] = useState('')
+  const [menusInstituicao, setMenusInstituicao] = useState([])
   const acessandoComo = !!localStorage.getItem('token_super_admin')
 
   useEffect(() => {
@@ -69,6 +70,10 @@ function Layout() {
       if (data.logo_base64) {
         setLogoBase64(data.logo_base64)
       }
+
+      if (Array.isArray(data.menus)) {
+  setMenusInstituicao(data.menus)
+}
     }).catch(console.error)
   }, [])
 
@@ -123,9 +128,9 @@ function Layout() {
     window.location.href = '/super-admin'
   }
   const itensFiltrados = menuItems.filter(item =>
-    item.perfis.includes(usuario?.perfil)
-  )
-
+  item.perfis.includes(usuario?.perfil) &&
+  menusInstituicao.includes(item.path.replace('/', ''))
+)
   return (
     <div className={styles.container}>
       {acessandoComo && (

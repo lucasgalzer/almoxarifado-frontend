@@ -9,14 +9,32 @@ function Dashboard() {
   const { usuario } = useAuth()
   const navigate = useNavigate()
   const [dados, setDados] = useState(null)
+  const [alertas, setAlertas] = useState([])
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    api.get('/dashboard/indicadores')
-      .then(({ data }) => setDados(data))
-      .catch(console.error)
-      .finally(() => setCarregando(false))
-  }, [])
+  carregarDashboard()
+
+  const intervalo = setInterval(carregarDashboard, 10000)
+
+  return () => clearInterval(intervalo)
+}, [])
+
+async function carregarDashboard() {
+  try {
+    const [{ data: indicadores }, { data: alertasData }] = await Promise.all([
+      api.get('/dashboard/indicadores'),
+      api.get('/alertas')
+    ])
+    
+    setDados(indicadores)
+    setAlertas(alertasData)
+  } catch (err) {
+    console.error(err)
+  } finally {
+    setCarregando(false)
+  }
+}
 
   const cards = dados ? [
     { label: 'Produtos', valor: dados.total_produtos, icon: Package, cor: '#2563eb', bg: '#eff6ff', rota: '/produtos' },
@@ -36,7 +54,6 @@ function Dashboard() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <p className={styles.saudacao}>{saudacao()}, {usuario?.nome?.split(' ')[0]}! 👋</p>
           <h1 className={styles.titulo}>Dashboard</h1>
         </div>
         <div className={styles.data}>
@@ -61,35 +78,36 @@ function Dashboard() {
         })}
       </div>
 
-      {dados && (dados.estoque_baixo > 0 || dados.estoque_zerado > 0) && (
-        <div className={styles.secao}>
-          <h2 className={styles.secaoTitulo}>
-            <TrendingDown size={16} color="#dc2626" />
-            Alertas de estoque
-          </h2>
-          <div className={styles.alertas}>
-            {dados.alertas_estoque.map(produto => (
-              <div
-                key={produto.codigo_interno}
-                className={`${styles.alertaItem} ${produto.quantidade_atual === 0 ? styles.alertaZerado : styles.alertaBaixo}`}
-                onClick={() => navigate('/estoque')}
-              >
-                <AlertTriangle size={15} color={produto.quantidade_atual === 0 ? '#dc2626' : '#d97706'} />
-                <div className={styles.alertaInfo}>
-                  <strong>{produto.nome}</strong>
-                  <span>{produto.codigo_interno}</span>
-                </div>
-                <span className={styles.alertaQtd} style={{ color: produto.quantidade_atual === 0 ? '#dc2626' : '#d97706' }}>
-                  {produto.quantidade_atual === 0 ? 'Zerado' : `${produto.quantidade_atual} / ${produto.quantidade_minima} ${produto.unidade_medida}`}
-                </span>
-              </div>
-            ))}
-            <button className={styles.btnVerEstoque} onClick={() => navigate('/estoque')}>
-              Ver estoque completo →
-            </button>
+      <div className={styles.tudo}>
+  {alertas.length === 0 ? (
+    <>
+      <CheckCircle size={18} color="#7eb82c" />
+      <span>Estoque em ordem — nenhum alerta no momento</span>
+    </>
+  ) : (
+    <div style={{ width: '100%' }}>
+      {alertas.map(alerta => (
+        <div
+          key={alerta.id}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '10px 0',
+            borderBottom: '1px solid #e5e7eb'
+          }}
+        >
+          <AlertTriangle size={18} color="#f59e0b" />
+
+          <div style={{ flex: 1 }}>
+            <strong>{alerta.titulo}</strong>
+            <div>{alerta.mensagem}</div>
           </div>
         </div>
-      )}
+      ))}
+    </div>
+  )}
+</div>
 
       {dados && dados.estoque_baixo === 0 && dados.estoque_zerado === 0 && (
         <div className={styles.tudo}>

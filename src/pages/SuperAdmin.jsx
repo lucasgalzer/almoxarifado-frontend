@@ -25,9 +25,27 @@ function SuperAdmin() {
     nome: '', email: '', cnpj: '', telefone: '',
     admin_nome: '', admin_email: '', admin_senha: '',
   })
+
+  const menusDisponiveis = [
+  { valor: 'dashboard', nome: 'Dashboard' },
+  { valor: 'produtos', nome: 'Produtos' },
+  { valor: 'pessoas', nome: 'Pessoas' },
+  { valor: 'estoque', nome: 'Estoque' },
+  { valor: 'emprestimos', nome: 'Empréstimos' },
+  { valor: 'emprestimos-fixos', nome: 'Empréstimos Fixos' },
+  { valor: 'solicitacoes', nome: 'Solicitações' },
+  { valor: 'manutencao', nome: 'Manutenção' },
+  { valor: 'relatorios', nome: 'Relatórios' },
+  { valor: 'configuracoes', nome: 'Configurações' },
+  { valor: 'usuarios', nome: 'Usuários' }
+]
   const [formEdit, setFormEdit] = useState({
-    nome: '', email: '', cnpj: '', telefone: '',
-  })
+  nome: '',
+  email: '',
+  cnpj: '',
+  telefone: '',
+  menus: []
+})
 
   useEffect(() => {
     carregarInstituicoes()
@@ -133,10 +151,18 @@ function SuperAdmin() {
   }
 
   function abrirEditar(inst) {
-    setModalEditando(inst)
-    setFormEdit({ nome: inst.nome, email: inst.email || '', cnpj: inst.cnpj || '', telefone: inst.telefone || '' })
-    setErro('')
-  }
+  setModalEditando(inst)
+
+  setFormEdit({
+    nome: inst.nome,
+    email: inst.email || '',
+    cnpj: inst.cnpj || '',
+    telefone: inst.telefone || '',
+    menus: Array.isArray(inst.menus) ? inst.menus : []
+  })
+
+  setErro('')
+}
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -342,6 +368,46 @@ function SuperAdmin() {
                   {salvando ? 'Salvando...' : 'Salvar alterações'}
                 </button>
               </div>
+              <div className={styles.campo}>
+  <label style={labelStyle}>Menus disponíveis</label>
+
+  <div style={{
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '8px',
+    marginTop: '8px'
+  }}>
+    {menusDisponiveis.map(menu => (
+      <label
+        key={menu.valor}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 10px',
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px',
+          cursor: 'pointer'
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={formEdit.menus.includes(menu.valor)}
+          onChange={() => {
+            setFormEdit(prev => ({
+              ...prev,
+              menus: prev.menus.includes(menu.valor)
+                ? prev.menus.filter(item => item !== menu.valor)
+                : [...prev.menus, menu.valor]
+            }))
+          }}
+        />
+
+        <span>{menu.nome}</span>
+      </label>
+    ))}
+  </div>
+</div>
             </form>
           </div>
         </div>

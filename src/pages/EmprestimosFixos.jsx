@@ -103,33 +103,54 @@ function EmprestimosFixos() {
     }
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault()
-    setErro('')
-    if (!form.pessoa_id) return setErro('Selecione uma pessoa')
-    if (!produtoEncontrado) return setErro('Busque um produto válido')
-    if (!form.sala.trim()) return setErro('Informe a sala onde o item ficará')
+async function handleSubmit(e) {
+  e.preventDefault()
+  setErro('')
 
-    setSalvando(true)
-    try {
-      await api.post('/emprestimos-fixos', {
-        pessoa_id: form.pessoa_id,
-        produto_id: produtoEncontrado.id,
-        sala: form.sala,
-        observacoes: form.observacoes,
-      })
-      addToast('Empréstimo fixo registrado!', 'sucesso')
-      setModalAberto(false)
-      setForm({ pessoa_id: '', pessoaBusca: '', produto_codigo: '', sala: '', observacoes: '' })
-      setProdutoEncontrado(null)
-      setPessoaSelecionada(null)
-      carregarEmprestimos()
-    } catch (error) {
-      setErro(error.response?.data?.erro || 'Erro ao registrar')
-    } finally {
-      setSalvando(false)
-    }
+  if (!form.pessoa_id) return setErro('Selecione uma pessoa')
+  if (!produtoEncontrado) return setErro('Busque um produto válido')
+  if (!form.sala.trim()) return setErro('Informe a sala onde o item ficará')
+
+  setSalvando(true)
+
+  try {
+    await api.post('/emprestimos-fixos', {
+      pessoa_id: form.pessoa_id,
+      produto_id: produtoEncontrado.id,
+      sala: form.sala,
+      observacoes: form.observacoes,
+    })
+
+    addToast('Empréstimo fixo registrado!', 'sucesso')
+
+    setModalAberto(false)
+
+    setForm({
+      pessoa_id: '',
+      pessoaBusca: '',
+      produto_codigo: '',
+      sala: '',
+      observacoes: ''
+    })
+
+    setProdutoEncontrado(null)
+    setPessoaSelecionada(null)
+
+    carregarEmprestimos()
+
+  } catch (error) {
+
+    console.error('ERRO AO REGISTRAR FIXO:', error)
+    console.error('RESPOSTA DO SERVIDOR:', error.response?.data)
+
+    setErro(
+      error.response?.data?.erro || 'Erro ao registrar'
+    )
+
+  } finally {
+    setSalvando(false)
   }
+}
 
   async function encerrarEmprestimo() {
     try {

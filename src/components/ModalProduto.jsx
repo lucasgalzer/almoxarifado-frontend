@@ -29,17 +29,17 @@ function ModalProduto({ produto, onFechar, onSalvar }) {
   })
 
   const opcoesCategorias = [
-  { value: '', label: 'Selecione uma categoria' },
-  ...categorias.map(c => ({
-    value: c.id,
-    label: c.nome,
-  })),
-]
+    { value: '', label: 'Selecione uma categoria' },
+    ...categorias.map(c => ({
+      value: c.id,
+      label: c.nome,
+    })),
+  ]
 
-const opcoesTipo = [
-  { value: 'consumivel', label: 'Consumível' },
-  { value: 'reutilizavel', label: 'Objeto' },
-]
+  const opcoesTipo = [
+    { value: 'consumivel', label: 'Consumível' },
+    { value: 'reutilizavel', label: 'Objeto' },
+  ]
 
 
   const [camposExtras, setCamposExtras] = useState({})
@@ -62,12 +62,16 @@ const opcoesTipo = [
         observacoes: produto.observacoes || '',
       })
 
+      setTipoControle(produto.tipo_controle || 'quantidade')
+
       if (produto.campos_extras) {
         const extras = typeof produto.campos_extras === 'string'
           ? JSON.parse(produto.campos_extras)
           : produto.campos_extras
         setCamposExtras(extras || {})
       }
+
+
 
       if (produto.categoria_id) {
         carregarCamposCategoria(produto.categoria_id)
@@ -137,7 +141,7 @@ const opcoesTipo = [
         quantidade_atual: tipoControle === 'individual' ? 1 : form.quantidade_atual,
         quantidade_minima: tipoControle === 'individual' ? 0 : form.quantidade_minima,
       }
-console.log(form.tipo)
+      console.log(form.tipo)
       if (produto) {
         await api.put(`/produtos/${produto.id}`, payload)
       } else {
@@ -230,23 +234,25 @@ console.log(form.tipo)
             <div className={styles.campo}>
               <label>Tipo *</label>
               <Select
-  className={styles.reactSelect}
-  classNamePrefix="react-select"
-  placeholder="Selecione uma categoria"
-  styles={reactSelectStyles}
-  options={opcoesTipo}
-  value={opcoesTipo.find(op => op.value === form.tipo) || null}
-  onChange={(opcao) =>
-    handleChange({
-      target: {
-        name: 'tipo',
-        value: opcao?.value || '',
-      },
-    })
-  }
-/>
+                className={styles.reactSelect}
+                classNamePrefix="react-select"
+                placeholder="Selecione uma categoria"
+                styles={reactSelectStyles}
+                options={opcoesTipo}
+                value={opcoesTipo.find(op => op.value === form.tipo) || null}
+                onChange={(opcao) =>
+                  handleChange({
+                    target: {
+                      name: 'tipo',
+                      value: opcao?.value || '',
+                    },
+                  })
+                }
+              />
             </div>
           </div>
+
+          
 
           <div className={styles.campo}>
             <label>Nome *</label>
@@ -261,21 +267,21 @@ console.log(form.tipo)
           <div className={styles.campo}>
             <label>Categoria *</label>
             <Select
-  className={styles.reactSelect}
-  classNamePrefix="react-select"
-  styles={reactSelectStyles}
-  placeholder="Selecione uma categoria"
-  options={opcoesCategorias}
-  value={opcoesCategorias.find(op => op.value === form.categoria_id) || null}
-  onChange={(opcao) =>
-    handleChange({
-      target: {
-        name: 'categoria_id',
-        value: opcao?.value || '',
-      },
-    })
-  }
-/>
+              className={styles.reactSelect}
+              classNamePrefix="react-select"
+              styles={reactSelectStyles}
+              placeholder="Selecione uma categoria"
+              options={opcoesCategorias}
+              value={opcoesCategorias.find(op => op.value === form.categoria_id) || null}
+              onChange={(opcao) =>
+                handleChange({
+                  target: {
+                    name: 'categoria_id',
+                    value: opcao?.value || '',
+                  },
+                })
+              }
+            />
           </div>
 
           {form.categoria_id && (
