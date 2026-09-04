@@ -27,25 +27,34 @@ function SuperAdmin() {
   })
 
   const menusDisponiveis = [
-  { valor: 'dashboard', nome: 'Dashboard' },
-  { valor: 'produtos', nome: 'Produtos' },
-  { valor: 'pessoas', nome: 'Pessoas' },
-  { valor: 'estoque', nome: 'Estoque' },
-  { valor: 'emprestimos', nome: 'Empréstimos' },
-  { valor: 'emprestimos-fixos', nome: 'Empréstimos Fixos' },
-  { valor: 'solicitacoes', nome: 'Solicitações' },
-  { valor: 'manutencao', nome: 'Manutenção' },
-  { valor: 'relatorios', nome: 'Relatórios' },
-  { valor: 'configuracoes', nome: 'Configurações' },
-  { valor: 'usuarios', nome: 'Usuários' }
-]
+    { valor: 'dashboard', nome: 'Dashboard' },
+    { valor: 'produtos', nome: 'Produtos' },
+    { valor: 'pessoas', nome: 'Pessoas' },
+    { valor: 'estoque', nome: 'Estoque' },
+    { valor: 'emprestimos', nome: 'Empréstimos' },
+    { valor: 'emprestimos-fixos', nome: 'Empréstimos Fixos' },
+    { valor: 'solicitacoes', nome: 'Solicitações' },
+    { valor: 'manutencao', nome: 'Manutenção' },
+    { valor: 'relatorios', nome: 'Relatórios' },
+    { valor: 'configuracoes', nome: 'Configurações' },
+    { valor: 'usuarios', nome: 'Usuários' }
+  ]
+
+  const cardsDisponiveis = [
+    { valor: 'produtos', nome: 'Produtos' },
+    { valor: 'emprestimos', nome: 'Empréstimos em aberto' },
+    { valor: 'manutencao', nome: 'Em manutenção' },
+    { valor: 'solicitacoes', nome: 'Solicitações pendentes' }
+  ]
+
   const [formEdit, setFormEdit] = useState({
-  nome: '',
-  email: '',
-  cnpj: '',
-  telefone: '',
-  menus: []
-})
+    nome: '',
+    email: '',
+    cnpj: '',
+    telefone: '',
+    menus: [],
+    cards: []
+  })
 
   useEffect(() => {
     carregarInstituicoes()
@@ -151,18 +160,19 @@ function SuperAdmin() {
   }
 
   function abrirEditar(inst) {
-  setModalEditando(inst)
+    setModalEditando(inst)
 
-  setFormEdit({
-    nome: inst.nome,
-    email: inst.email || '',
-    cnpj: inst.cnpj || '',
-    telefone: inst.telefone || '',
-    menus: Array.isArray(inst.menus) ? inst.menus : []
-  })
+    setFormEdit({
+      nome: inst.nome,
+      email: inst.email || '',
+      cnpj: inst.cnpj || '',
+      telefone: inst.telefone || '',
+      menus: Array.isArray(inst.menus) ? inst.menus : [],
+      cards: Array.isArray(inst.cards) ? inst.cards : []
+    })
 
-  setErro('')
-}
+    setErro('')
+  }
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -369,45 +379,86 @@ function SuperAdmin() {
                 </button>
               </div>
               <div className={styles.campo}>
-  <label style={labelStyle}>Menus disponíveis</label>
+                <label style={labelStyle}>Menus disponíveis</label>
 
-  <div style={{
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '8px',
-    marginTop: '8px'
-  }}>
-    {menusDisponiveis.map(menu => (
-      <label
-        key={menu.valor}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '8px 10px',
-          border: '1px solid #e5e7eb',
-          borderRadius: '8px',
-          cursor: 'pointer'
-        }}
-      >
-        <input
-          type="checkbox"
-          checked={formEdit.menus.includes(menu.valor)}
-          onChange={() => {
-            setFormEdit(prev => ({
-              ...prev,
-              menus: prev.menus.includes(menu.valor)
-                ? prev.menus.filter(item => item !== menu.valor)
-                : [...prev.menus, menu.valor]
-            }))
-          }}
-        />
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '8px',
+                  marginTop: '8px'
+                }}>
+                  {menusDisponiveis.map(menu => (
+                    <label
+                      key={menu.valor}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formEdit.menus.includes(menu.valor)}
+                        onChange={() => {
+                          setFormEdit(prev => ({
+                            ...prev,
+                            menus: prev.menus.includes(menu.valor)
+                              ? prev.menus.filter(item => item !== menu.valor)
+                              : [...prev.menus, menu.valor]
+                          }))
+                        }}
+                      />
 
-        <span>{menu.nome}</span>
-      </label>
-    ))}
-  </div>
-</div>
+                      <span>{menu.nome}</span>
+                    </label>
+                  ))}
+                </div>
+
+                <div className={styles.campo}>
+                  <label style={labelStyle}>Cards do Dashboard</label>
+
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '8px',
+                    marginTop: '8px'
+                  }}>
+                    {cardsDisponiveis.map(card => (
+                      <label
+                        key={card.valor}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '8px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formEdit.cards.includes(card.valor)}
+                          onChange={() => {
+                            setFormEdit(prev => ({
+                              ...prev,
+                              cards: prev.cards.includes(card.valor)
+                                ? prev.cards.filter(item => item !== card.valor)
+                                : [...prev.cards, card.valor]
+                            }))
+                          }}
+                        />
+
+                        <span>{card.nome}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </form>
           </div>
         </div>
