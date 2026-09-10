@@ -3,6 +3,7 @@ import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import RotaProtegida from './routes/RotaProtegida'
+import RotaMenu from './routes/RotaMenu'
 import Produtos from './pages/Produtos'
 import Pessoas from './pages/Pessoas'
 import Estoque from './pages/Estoque'
@@ -50,16 +51,96 @@ function App() {
         }>
           <Route index element={<RedirecionarPorPerfil />} />
           <Route path="dashboard" element={<Dashboard />} />
-          <Route path="produtos" element={<Produtos />} />
-          <Route path="pessoas" element={<Pessoas />} />
-          <Route path="estoque" element={<Estoque />} />
-          <Route path="emprestimos" element={<Emprestimos />} />
-          <Route path="solicitacoes" element={<Solicitacoes />} />
-          <Route path="manutencao" element={<Manutencao />} />
-          <Route path="relatorios" element={<Relatorios />} />
-          <Route path="configuracoes" element={<Configuracoes />} />
-          <Route path="usuarios" element={<Usuarios />} />
-          <Route path="emprestimos-fixos" element={<EmprestimosFixos />} />
+
+<Route
+  path="produtos"
+  element={
+    <RotaMenu menu="produtos">
+      <Produtos />
+    </RotaMenu>
+  }
+/>
+
+<Route
+  path="pessoas"
+  element={
+    <RotaMenu menu="pessoas">
+      <Pessoas />
+    </RotaMenu>
+  }
+/>
+
+<Route
+  path="estoque"
+  element={
+    <RotaMenu menu="estoque">
+      <Estoque />
+    </RotaMenu>
+  }
+/>
+
+<Route
+  path="emprestimos"
+  element={
+    <RotaMenu menu="emprestimos">
+      <Emprestimos />
+    </RotaMenu>
+  }
+/>
+
+<Route
+  path="solicitacoes"
+  element={
+    <RotaMenu menu="solicitacoes">
+      <Solicitacoes />
+    </RotaMenu>
+  }
+/>
+
+<Route
+  path="manutencao"
+  element={
+    <RotaMenu menu="manutencao">
+      <Manutencao />
+    </RotaMenu>
+  }
+/>
+
+<Route
+  path="relatorios"
+  element={
+    <RotaMenu menu="relatorios">
+      <Relatorios />
+    </RotaMenu>
+  }
+/>
+
+<Route
+  path="configuracoes"
+  element={
+    <RotaMenu menu="configuracoes">
+      <Configuracoes />
+    </RotaMenu>
+  }
+/>
+
+<Route
+  path="usuarios"
+  element={
+    <RotaMenu menu="usuarios">
+      <Usuarios />
+    </RotaMenu>
+  }
+/>
+
+<Route
+  path="emprestimos-fixos"
+  element={
+    <RotaMenu menu="emprestimos-fixos">
+      <EmprestimosFixos />
+    </RotaMenu>
+  }
+/>
         </Route>
 
         <Route path="*" element={<Navigate to="/login" />} />

@@ -119,21 +119,29 @@ function SuperAdmin() {
     }
   }
 
-  async function handleEditar(e) {
-    e.preventDefault()
-    setErro('')
-    setSalvando(true)
-    try {
-      await api.put(`/super-admin/instituicoes/${modalEditando.id}`, formEdit)
-      addToast('Escola atualizada com sucesso!', 'sucesso')
-      setModalEditando(null)
-      carregarInstituicoes()
-    } catch (error) {
-      setErro(error.response?.data?.erro || 'Erro ao atualizar escola')
-    } finally {
-      setSalvando(false)
-    }
+async function handleEditar(e) {
+  e.preventDefault()
+  setErro('')
+  setSalvando(true)
+
+  try {
+    console.log('FORMULÁRIO ENVIADO:', {
+  ...formEdit,
+  menus: formEdit.menus,
+  cards: formEdit.cards
+})
+
+    await api.put(`/super-admin/instituicoes/${modalEditando.id}`, formEdit)
+
+    addToast('Escola atualizada com sucesso!', 'sucesso')
+    setModalEditando(null)
+    carregarInstituicoes()
+  } catch (error) {
+    setErro(error.response?.data?.erro || 'Erro ao atualizar escola')
+  } finally {
+    setSalvando(false)
   }
+}
 
   async function toggleAtivo(inst) {
     try {

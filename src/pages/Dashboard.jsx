@@ -11,6 +11,8 @@ function Dashboard() {
   const [dados, setDados] = useState(null)
   const [alertas, setAlertas] = useState([])
   const [carregando, setCarregando] = useState(true)
+  const [menusInstituicao, setMenusInstituicao] = useState([])
+  const [cardsInstituicao, setCardsInstituicao] = useState([])
 
   useEffect(() => {
   carregarDashboard()
@@ -22,13 +24,23 @@ function Dashboard() {
 
 async function carregarDashboard() {
   try {
-    const [{ data: indicadores }, { data: alertasData }] = await Promise.all([
-      api.get('/dashboard/indicadores'),
-      api.get('/alertas')
-    ])
-    
-    setDados(indicadores)
-    setAlertas(alertasData)
+const [{ data: indicadores }, { data: alertasData }, { data: instituicao }] = await Promise.all([
+  api.get('/dashboard/indicadores'),
+  api.get('/alertas'),
+  api.get('/instituicao')
+])
+
+setDados(indicadores)
+setAlertas(alertasData)
+
+if (Array.isArray(instituicao.menus)) {
+  setMenusInstituicao(instituicao.menus)
+}
+
+if (Array.isArray(instituicao.cards)) {
+  setCardsInstituicao(instituicao.cards)
+}
+
   } catch (err) {
     console.error(err)
   } finally {
@@ -36,12 +48,12 @@ async function carregarDashboard() {
   }
 }
 
-  const cards = dados ? [
-    { label: 'Produtos', valor: dados.total_produtos, icon: Package, cor: '#2563eb', bg: '#eff6ff', rota: '/produtos' },
-    { label: 'Empréstimos em aberto', valor: dados.emprestimos_abertos, icon: ArrowLeftRight, cor: '#d97706', bg: '#fffbeb', rota: '/emprestimos' },
-    { label: 'Em manutenção', valor: dados.manutencoes_abertas, icon: Wrench, cor: '#dc2626', bg: '#fef2f2', rota: '/manutencao' },
-    { label: 'Solicitações pendentes', valor: dados.solicitacoes_pendentes, icon: ClipboardList, cor: '#7eb82c', bg: '#f0fdf4', rota: '/solicitacoes' },
-  ] : []
+const cards = dados ? [
+  { menu: 'produtos', label: 'Produtos', valor: dados.total_produtos, icon: Package, cor: '#2563eb', bg: '#eff6ff', rota: '/produtos' },
+  { menu: 'emprestimos', label: 'Empréstimos em aberto', valor: dados.emprestimos_abertos, icon: ArrowLeftRight, cor: '#d97706', bg: '#fffbeb', rota: '/emprestimos' },
+  { menu: 'manutencao', label: 'Em manutenção', valor: dados.manutencoes_abertas, icon: Wrench, cor: '#dc2626', bg: '#fef2f2', rota: '/manutencao' },
+  { menu: 'solicitacoes', label: 'Solicitações pendentes', valor: dados.solicitacoes_pendentes, icon: ClipboardList, cor: '#7eb82c', bg: '#f0fdf4', rota: '/solicitacoes' },
+].filter(card => cardsInstituicao.includes(card.menu)) : []
 
   function saudacao() {
     const hora = new Date().getHours()
