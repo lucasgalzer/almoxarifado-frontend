@@ -42,17 +42,43 @@ function Login() {
     try {
       const { data } = await api.post('/auth/login', {
         email,
-        senha,
+        senha
       })
 
+      // ============================================================
+      // TROCA DE SENHA OBRIGATÓRIA
+      // ============================================================
+
+      if (data.precisa_trocar_senha) {
+        localStorage.setItem('token', data.token)
+
+        localStorage.setItem(
+          'troca_senha_pessoa',
+          JSON.stringify(data.pessoa)
+        )
+
+        localStorage.removeItem('usuario')
+        localStorage.removeItem('usuario_super_admin')
+
+        navigate('/trocar-senha')
+
+        return
+      }
+
+      // ============================================================
+      // LOGIN NORMAL
+      // ============================================================
+
       localStorage.setItem('token', data.token)
+
+      localStorage.removeItem('troca_senha_pessoa')
 
       localStorage.removeItem('usuario')
       localStorage.removeItem('usuario_super_admin')
 
-      if (data.usuario.super_admin) {
+      if (data.usuario?.super_admin) {
         navigate('/super-admin')
-      } else if (data.usuario.perfil === 'solicitante') {
+      } else if (data.usuario?.perfil === 'solicitante') {
         navigate('/solicitante')
       } else {
         navigate('/dashboard')
@@ -92,7 +118,6 @@ function Login() {
             />
           </div>
 
-
           {/* DESCRIÇÃO */}
 
           <div className={styles.cardHeader}>
@@ -100,7 +125,6 @@ function Login() {
               Entre com suas credenciais para acessar o sistema.
             </p>
           </div>
-
 
           {/* FORMULÁRIO */}
 
@@ -122,7 +146,6 @@ function Login() {
 
               </div>
             )}
-
 
             {/* E-MAIL */}
 
@@ -153,7 +176,6 @@ function Login() {
 
             </div>
 
-
             {/* SENHA */}
 
             <div className={styles.campo}>
@@ -183,7 +205,6 @@ function Login() {
 
             </div>
 
-
             {/* BOTÃO */}
 
             <button
@@ -208,7 +229,6 @@ function Login() {
 
           </form>
 
-
           {/* SEGURANÇA */}
 
           <div className={styles.security}>
@@ -220,7 +240,6 @@ function Login() {
             </span>
 
           </div>
-
 
           {/* RODAPÉ */}
 

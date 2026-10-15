@@ -16,9 +16,13 @@ function ajustarCor(hex, percent) {
 
 const TIPOS_CAMPO = [
   { value: 'texto', label: 'Texto' },
+  { value: 'texto_longo', label: 'Texto longo' },
   { value: 'numero', label: 'Número' },
+  { value: 'data', label: 'Data' },
+  { value: 'hora', label: 'Hora' },
   { value: 'select', label: 'Seleção (lista)' },
-  { value: 'boolean', label: 'Sim/Não' },
+  { value: 'checkbox', label: 'Caixa de seleção' },
+  { value: 'arquivo', label: 'Arquivo' },
 ]
 
 function Configuracoes() {
@@ -41,8 +45,7 @@ const [aparencia, setAparencia] = useState({
   const opcoesTipoControle = [
   { value: 'quantidade', label: 'Por quantidade' },
   { value: 'individual', label: 'Por unidade individual' },
-]
-
+] 
 
   const [novaCategoria, setNovaCategoria] = useState({ nome: '', descricao: '', tipo_controle: 'quantidade' })
   const [editandoCategoria, setEditandoCategoria] = useState(null)
@@ -58,13 +61,356 @@ const [aparencia, setAparencia] = useState({
   const [estoqueMinimoEditando, setEstoqueMinimoEditando] = useState(null)
   const [novoMinimo, setNovoMinimo] = useState('')
 
-  
+  // ============================================================
+  // CONFIGURAÇÃO DE SOLICITAÇÕES DO SETOR
+  // ============================================================
+  const [setorAtual, setSetorAtual] = useState(null)
+  const [setoresDisponiveis, setSetoresDisponiveis] = useState([])
+  const [setorSelecionado, setSetorSelecionado] = useState(null)
+  const [superAdmin, setSuperAdmin] = useState(false)
+  const [carregandoSetores, setCarregandoSetores] = useState(false)
+
+  const [servicosSolicitacao, setServicosSolicitacao] = useState([])
+  const [servicoExpandido, setServicoExpandido] = useState(null)
+  const [camposSolicitacao, setCamposSolicitacao] = useState([])
+  const [carregandoServicosSolicitacao, setCarregandoServicosSolicitacao] = useState(false)
+  const [carregandoCamposSolicitacao, setCarregandoCamposSolicitacao] = useState(false)
+  const [salvandoSolicitacao, setSalvandoSolicitacao] = useState(false)
+
+  const [novoServico, setNovoServico] = useState({ nome: '', descricao: '', ordem: 0 })
+  const [editandoServico, setEditandoServico] = useState(null)
+
+  const [novoCampoSolicitacao, setNovoCampoSolicitacao] = useState({
+    nome: '',
+    label: '',
+    tipo: 'texto',
+    obrigatorio: false,
+    ordem: 0
+  })
+  const [formularioCampoAberto, setFormularioCampoAberto] = useState(false)
+  const [editandoCampoSolicitacao, setEditandoCampoSolicitacao] = useState(null)
+
+  const [novaOpcaoPorCampo, setNovaOpcaoPorCampo] = useState({})
+  const [editandoOpcao, setEditandoOpcao] = useState(null)
+
   useEffect(() => {
     carregarCategorias()
     carregarProdutos()
     carregarLogs()
     carregarInstituicao()
+    carregarSetorAtual()
   }, [])
+
+  async function carregarSetorAtual() {
+    setCarregandoSetores(true)
+
+    try {
+      const { data } = await api.get('/auth/me')
+
+      const setor = data?.setor_id
+        ? {
+            id: data.setor_id,
+            nome: data.setor_nome || 'Setor atual'
+          }
+        : null
+
+      setSetorAtual(setor)
+      setSetorSelecionado(setor)
+      setSuperAdmin(Boolean(data?.super_admin))
+      setSetoresDisponiveis(setor ? [setor] : [])
+    } catch (error) {
+      console.error('Erro ao carregar setor atual:', error)
+      setSetorAtual(null)
+      setSetorSelecionado(null)
+      setSetoresDisponiveis([])
+    } finally {
+      setCarregandoSetores(false)
+    }
+  }
+
+  async function carregarServicosSolicitacao() {
+    if (!setorSelecionado?.id) {
+      setServicosSolicitacao([])
+      return
+    }
+
+    setCarregandoServicosSolicitacao(true)
+    try {
+      const { data } = await api.get('/solicitacao-configuracao/servicos', {
+        params: { setor_id: setorSelecionado.id }
+      })
+      setServicosSolicitacao(Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error(error)
+      addToast(error.response?.data?.erro || 'Erro ao carregar serviços de solicitação', 'erro')
+    } finally {
+      setCarregandoServicosSolicitacao(false)
+    }
+  }
+
+  async function carregarCamposSolicitacao(servico) {
+    if (!servico?.id) {
+      setCamposSolicitacao([])
+      return
+    }
+
+    setCarregandoCamposSolicitacao(true)
+
+    try {
+      const { data } = await api.get(
+        `/solicitacao-configuracao/servicos/${servico.id}/campos`
+      )
+
+      setCamposSolicitacao(Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error(error)
+      addToast(
+        error.response?.data?.erro || 'Erro ao carregar perguntas',
+        'erro'
+      )
+      setCamposSolicitacao([])
+    } finally {
+      setCarregandoCamposSolicitacao(false)
+    }
+  }
+
+  async function alternarCamposSolicitacao(servico) {
+    if (servicoExpandido?.id === servico.id) {
+      setServicoExpandido(null)
+      setCamposSolicitacao([])
+      setFormularioCampoAberto(false)
+      setEditandoCampoSolicitacao(null)
+      setEditandoOpcao(null)
+      return
+    }
+
+    setServicoExpandido(servico)
+    setFormularioCampoAberto(false)
+    setEditandoCampoSolicitacao(null)
+    setEditandoOpcao(null)
+
+    await carregarCamposSolicitacao(servico)
+  }
+
+  async function salvarServicoSolicitacao(e) {
+    e.preventDefault()
+
+    if (!setorSelecionado?.id) {
+      addToast('Não foi possível identificar o setor atual.', 'erro')
+      return
+    }
+
+    if (!novoServico.nome.trim()) {
+      addToast('Informe o nome do serviço.', 'erro')
+      return
+    }
+
+    setSalvandoSolicitacao(true)
+    try {
+      const payload = {
+        nome: novoServico.nome.trim(),
+        descricao: novoServico.descricao.trim() || null,
+        ordem: Number(novoServico.ordem) || 0
+      }
+
+      if (editandoServico) {
+        await api.put(`/solicitacao-configuracao/servicos/${editandoServico.id}`, payload)
+        addToast('Serviço atualizado com sucesso!', 'sucesso')
+      } else {
+        await api.post('/solicitacao-configuracao/servicos', {
+          ...payload,
+          setor_id: setorSelecionado.id
+        })
+        addToast('Serviço criado com sucesso!', 'sucesso')
+      }
+
+      setNovoServico({ nome: '', descricao: '', ordem: 0 })
+      setEditandoServico(null)
+      await carregarServicosSolicitacao()
+    } catch (error) {
+      console.error(error)
+      addToast(error.response?.data?.erro || 'Erro ao salvar serviço', 'erro')
+    } finally {
+      setSalvandoSolicitacao(false)
+    }
+  }
+
+  function editarServicoSolicitacao(servico) {
+    setEditandoServico(servico)
+    setNovoServico({
+      nome: servico.nome || '',
+      descricao: servico.descricao || '',
+      ordem: servico.ordem || 0
+    })
+  }
+
+  function cancelarEdicaoServico() {
+    setEditandoServico(null)
+    setNovoServico({ nome: '', descricao: '', ordem: 0 })
+  }
+
+  async function alterarStatusServicoSolicitacao(servico) {
+    try {
+      await api.patch(`/solicitacao-configuracao/servicos/${servico.id}/status`, {
+        ativo: !servico.ativo
+      })
+      addToast(servico.ativo ? 'Serviço desativado.' : 'Serviço ativado.', 'sucesso')
+      await carregarServicosSolicitacao()
+    } catch (error) {
+      console.error(error)
+      addToast(error.response?.data?.erro || 'Erro ao alterar status do serviço', 'erro')
+    }
+  }
+
+  function iniciarNovoCampoSolicitacao() {
+    setEditandoCampoSolicitacao(null)
+    setFormularioCampoAberto(true)
+    setNovoCampoSolicitacao({
+      nome: '',
+      label: '',
+      tipo: 'texto',
+      obrigatorio: false,
+      ordem: camposSolicitacao.length + 1
+    })
+  }
+
+  async function salvarCampoSolicitacao(e) {
+    e.preventDefault()
+
+    if (!servicoExpandido?.id) return
+
+    if (!novoCampoSolicitacao.nome.trim() || !novoCampoSolicitacao.label.trim()) {
+      addToast('Informe o nome interno e o texto da pergunta.', 'erro')
+      return
+    }
+
+    setSalvandoSolicitacao(true)
+    try {
+      const payload = {
+        nome: novoCampoSolicitacao.nome.trim().toLowerCase().replace(/\s+/g, '_'),
+        label: novoCampoSolicitacao.label.trim(),
+        tipo: novoCampoSolicitacao.tipo,
+        obrigatorio: Boolean(novoCampoSolicitacao.obrigatorio),
+        ordem: Number(novoCampoSolicitacao.ordem) || 0
+      }
+
+      if (editandoCampoSolicitacao) {
+        await api.put(`/solicitacao-configuracao/campos/${editandoCampoSolicitacao.id}`, payload)
+        addToast('Pergunta atualizada com sucesso!', 'sucesso')
+      } else {
+        await api.post(`/solicitacao-configuracao/servicos/${servicoExpandido.id}/campos`, payload)
+        addToast('Pergunta adicionada com sucesso!', 'sucesso')
+      }
+
+      setEditandoCampoSolicitacao(null)
+      setFormularioCampoAberto(false)
+      setNovoCampoSolicitacao({
+        nome: '',
+        label: '',
+        tipo: 'texto',
+        obrigatorio: false,
+        ordem: camposSolicitacao.length + 2
+      })
+
+      await carregarCamposSolicitacao(servicoExpandido)
+    } catch (error) {
+      console.error(error)
+      addToast(error.response?.data?.erro || 'Erro ao salvar pergunta', 'erro')
+    } finally {
+      setSalvandoSolicitacao(false)
+    }
+  }
+
+  function editarCampoSolicitacao(campo) {
+    setEditandoCampoSolicitacao(campo)
+    setFormularioCampoAberto(true)
+    setNovoCampoSolicitacao({
+      nome: campo.nome || '',
+      label: campo.label || '',
+      tipo: campo.tipo || 'texto',
+      obrigatorio: Boolean(campo.obrigatorio),
+      ordem: campo.ordem || 0
+    })
+  }
+
+  async function alterarStatusCampoSolicitacao(campo) {
+    try {
+      await api.patch(`/solicitacao-configuracao/campos/${campo.id}/status`, {
+        ativo: !campo.ativo
+      })
+      addToast(campo.ativo ? 'Pergunta desativada.' : 'Pergunta ativada.', 'sucesso')
+      await carregarCamposSolicitacao(servicoExpandido)
+    } catch (error) {
+      console.error(error)
+      addToast(error.response?.data?.erro || 'Erro ao alterar status da pergunta', 'erro')
+    }
+  }
+
+  async function adicionarOpcaoCampo(campo) {
+    const valor = (novaOpcaoPorCampo[campo.id] || '').trim()
+    if (!valor) {
+      addToast('Informe o valor da opção.', 'erro')
+      return
+    }
+
+    try {
+      await api.post(`/solicitacao-configuracao/campos/${campo.id}/opcoes`, {
+        valor,
+        ordem: (campo.opcoes?.length || 0) + 1
+      })
+      setNovaOpcaoPorCampo(prev => ({ ...prev, [campo.id]: '' }))
+      addToast('Opção adicionada!', 'sucesso')
+      await carregarCamposSolicitacao(servicoExpandido)
+    } catch (error) {
+      console.error(error)
+      addToast(error.response?.data?.erro || 'Erro ao adicionar opção', 'erro')
+    }
+  }
+
+  function iniciarEdicaoOpcao(opcao) {
+    setEditandoOpcao({ id: opcao.id, valor: opcao.valor })
+  }
+
+  async function salvarEdicaoOpcao() {
+    if (!editandoOpcao?.id || !editandoOpcao.valor.trim()) return
+
+    try {
+      await api.put(`/solicitacao-configuracao/opcoes/${editandoOpcao.id}`, {
+        valor: editandoOpcao.valor.trim()
+      })
+      setEditandoOpcao(null)
+      addToast('Opção atualizada!', 'sucesso')
+      await carregarCamposSolicitacao(servicoExpandido)
+    } catch (error) {
+      console.error(error)
+      addToast(error.response?.data?.erro || 'Erro ao atualizar opção', 'erro')
+    }
+  }
+
+  async function excluirOpcaoCampo(opcao) {
+    try {
+      await api.delete(`/solicitacao-configuracao/opcoes/${opcao.id}`)
+      addToast('Opção excluída!', 'sucesso')
+      await carregarCamposSolicitacao(servicoExpandido)
+    } catch (error) {
+      console.error(error)
+      addToast(error.response?.data?.erro || 'Erro ao excluir opção', 'erro')
+    }
+  }
+
+  useEffect(() => {
+    setServicoExpandido(null)
+    setCamposSolicitacao([])
+    setFormularioCampoAberto(false)
+    setEditandoCampoSolicitacao(null)
+    setEditandoOpcao(null)
+
+    if (setorSelecionado?.id) {
+      carregarServicosSolicitacao()
+    } else {
+      setServicosSolicitacao([])
+    }
+  }, [setorSelecionado?.id])
 
   async function carregarInstituicao() {
     try {
@@ -298,6 +644,7 @@ const [aparencia, setAparencia] = useState({
         <button className={`${styles.aba} ${aba === 'categorias' ? styles.abaAtiva : ''}`} onClick={() => setAba('categorias')}>Categorias</button>
         <button className={`${styles.aba} ${aba === 'unidades' ? styles.abaAtiva : ''}`} onClick={() => setAba('unidades')}>Unidades de medida</button>
         <button className={`${styles.aba} ${aba === 'estoque_minimo' ? styles.abaAtiva : ''}`} onClick={() => setAba('estoque_minimo')}>Estoque mínimo</button>
+        <button className={`${styles.aba} ${aba === 'solicitacoes' ? styles.abaAtiva : ''}`} onClick={() => setAba('solicitacoes')}>Solicitações</button>
         <button className={`${styles.aba} ${aba === 'aparencia' ? styles.abaAtiva : ''}`} onClick={() => setAba('aparencia')}>Aparência</button>
         <button className={`${styles.aba} ${aba === 'audit' ? styles.abaAtiva : ''}`} onClick={() => { setAba('audit'); carregarLogs() }}>Audit Log</button>
       </div>
@@ -502,6 +849,211 @@ const [aparencia, setAparencia] = useState({
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {aba === 'solicitacoes' && (
+        <div className={styles.conteudo}>
+          <div className={styles.formBox}>
+            <h2 className={styles.secaoTitulo}>Configuração de solicitações</h2>
+            <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '0' }}>
+              Configure os serviços e as perguntas que aparecerão para os solicitantes deste setor.
+            </p>
+          </div>
+
+          {!setorSelecionado ? (
+            <div className={styles.formBox}>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-danger)' }}>
+                Não foi possível identificar o setor atual. Entre novamente no setor e tente acessar esta configuração.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className={styles.formBox}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '14px', flexWrap: 'wrap' }}>
+                  <div>
+                    <h3 className={styles.secaoTitulo} style={{ marginBottom: '4px' }}>Serviços do setor</h3>
+                    <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                      {setorSelecionado?.nome || setorAtual?.nome || 'Setor atual'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { cancelarEdicaoServico(); document.getElementById('novo-servico-solicitacao')?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }}
+                    className={styles.btnSalvar}
+                    style={{ padding: '8px 14px' }}
+                  >
+                    + Novo serviço
+                  </button>
+                </div>
+
+                {carregandoServicosSolicitacao ? (
+                  <p style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>Carregando serviços...</p>
+                ) : servicosSolicitacao.length === 0 ? (
+                  <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: 0 }}>Nenhum serviço cadastrado para este setor.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {servicosSolicitacao.map(servico => (
+                      <div key={servico.id}>
+                        <div className={styles.itemLinha} style={{ opacity: servico.ativo ? 1 : 0.65 }}>
+                          <div className={styles.itemInfo} style={{ minWidth: 0 }}>
+                            <strong>{servico.nome}</strong>
+                            {servico.descricao && <span>{servico.descricao}</span>}
+                            <span style={{ marginTop: '3px' }}>{servico.ativo ? 'Ativo' : 'Inativo'}</span>
+                          </div>
+                          <div className={styles.itemAcoes} style={{ flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              onClick={() => alternarCamposSolicitacao(servico)}
+                              className={styles.btnEditar}
+                              style={servicoExpandido?.id === servico.id ? { borderColor: 'var(--color-primary)', color: 'var(--color-primary)' } : {}}
+                            >
+                              {servicoExpandido?.id === servico.id ? 'Fechar perguntas' : 'Perguntas'}
+                            </button>
+                            <button type="button" onClick={() => editarServicoSolicitacao(servico)} className={styles.btnEditar}>Editar</button>
+                            <button type="button" onClick={() => alterarStatusServicoSolicitacao(servico)} className={styles.btnEditar}>
+                              {servico.ativo ? 'Desativar' : 'Ativar'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {servicoExpandido?.id === servico.id && (
+                          <div style={{ background: 'var(--color-surface-alt)', border: '1px solid var(--color-border)', borderTop: 'none', padding: '16px 18px', borderRadius: '0 0 var(--radius-md) var(--radius-md)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                              <div>
+                                <strong style={{ fontSize: '13px', color: 'var(--color-text)' }}>Perguntas de "{servico.nome}"</strong>
+                                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '3px' }}>Configure os campos exibidos quando este serviço for selecionado.</div>
+                              </div>
+                              <button type="button" onClick={iniciarNovoCampoSolicitacao} style={{ padding: '7px 12px', background: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: 'var(--radius-sm)', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+                                + Adicionar pergunta
+                              </button>
+                            </div>
+
+                            {carregandoCamposSolicitacao ? (
+                              <p style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>Carregando perguntas...</p>
+                            ) : camposSolicitacao.length === 0 ? (
+                              <p style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>Nenhuma pergunta cadastrada.</p>
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
+                                {camposSolicitacao.map(campo => (
+                                  <div key={campo.id} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '12px 14px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                                      <div style={{ minWidth: 0, flex: 1 }}>
+                                        <strong style={{ fontSize: '13px', color: 'var(--color-text)' }}>{campo.label}</strong>
+                                        <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', marginTop: '5px' }}>
+                                          <span className={styles.badge}>{TIPOS_CAMPO.find(t => t.value === campo.tipo)?.label || campo.tipo}</span>
+                                          <span className={styles.badge}>{campo.obrigatorio ? 'Obrigatório' : 'Opcional'}</span>
+                                          <span className={styles.badge}>{campo.ativo ? 'Ativo' : 'Inativo'}</span>
+                                        </div>
+                                        <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginTop: '5px', fontFamily: 'monospace' }}>{campo.nome}</div>
+                                      </div>
+                                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                        <button type="button" onClick={() => editarCampoSolicitacao(campo)} className={styles.btnEditar}>Editar</button>
+                                        <button type="button" onClick={() => alterarStatusCampoSolicitacao(campo)} className={styles.btnEditar}>{campo.ativo ? 'Desativar' : 'Ativar'}</button>
+                                      </div>
+                                    </div>
+
+                                    {campo.tipo === 'select' && (
+                                      <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--color-border)' }}>
+                                        <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--color-text)', marginBottom: '8px' }}>Opções</div>
+                                        {campo.opcoes?.length > 0 ? (
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '9px' }}>
+                                            {campo.opcoes.map(opcao => (
+                                              <div key={opcao.id} style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                                {editandoOpcao?.id === opcao.id ? (
+                                                  <>
+                                                    <input value={editandoOpcao.valor} onChange={e => setEditandoOpcao(prev => ({ ...prev, valor: e.target.value }))} className={styles.input} style={{ flex: 1, padding: '6px 9px' }} />
+                                                    <button type="button" onClick={salvarEdicaoOpcao} className={styles.btnSalvarInline}>✓</button>
+                                                    <button type="button" onClick={() => setEditandoOpcao(null)} className={styles.btnCancelarInline}>✕</button>
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <span style={{ flex: 1, fontSize: '12px' }}>{opcao.valor}</span>
+                                                    <button type="button" onClick={() => iniciarEdicaoOpcao(opcao)} className={styles.btnEditar}>Editar</button>
+                                                    <button type="button" onClick={() => excluirOpcaoCampo(opcao)} className={styles.btnExcluir}>Excluir</button>
+                                                  </>
+                                                )}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '8px' }}>Nenhuma opção cadastrada.</div>
+                                        )}
+                                        <div style={{ display: 'flex', gap: '7px' }}>
+                                          <input
+                                            value={novaOpcaoPorCampo[campo.id] || ''}
+                                            onChange={e => setNovaOpcaoPorCampo(prev => ({ ...prev, [campo.id]: e.target.value }))}
+                                            placeholder="Nova opção"
+                                            className={styles.input}
+                                            style={{ flex: 1, padding: '6px 9px' }}
+                                          />
+                                          <button type="button" onClick={() => adicionarOpcaoCampo(campo)} className={styles.btnSalvarInline}>Adicionar</button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {formularioCampoAberto && (
+                              <form onSubmit={salvarCampoSolicitacao} style={{ borderTop: '1px solid var(--color-border)', paddingTop: '14px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                  <input className={styles.input} placeholder="Nome interno *" value={novoCampoSolicitacao.nome} onChange={e => setNovoCampoSolicitacao(prev => ({ ...prev, nome: e.target.value.toLowerCase().replace(/\s+/g, '_') }))} />
+                                  <input className={styles.input} placeholder="Pergunta / label *" value={novoCampoSolicitacao.label} onChange={e => setNovoCampoSolicitacao(prev => ({ ...prev, label: e.target.value }))} />
+                                  <select className={styles.input} value={novoCampoSolicitacao.tipo} onChange={e => setNovoCampoSolicitacao(prev => ({ ...prev, tipo: e.target.value }))}>
+                                    {TIPOS_CAMPO.map(tipo => <option key={tipo.value} value={tipo.value}>{tipo.label}</option>)}
+                                  </select>
+                                  <input className={styles.input} type="number" min="0" placeholder="Ordem" value={novoCampoSolicitacao.ordem} onChange={e => setNovoCampoSolicitacao(prev => ({ ...prev, ordem: e.target.value }))} />
+                                </div>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '10px 0', fontSize: '12px', color: 'var(--color-text-muted)', cursor: 'pointer' }}>
+                                  <input type="checkbox" checked={novoCampoSolicitacao.obrigatorio} onChange={e => setNovoCampoSolicitacao(prev => ({ ...prev, obrigatorio: e.target.checked }))} />
+                                  Obrigatório
+                                </label>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                  <button type="submit" disabled={salvandoSolicitacao} className={styles.btnSalvar}>{salvandoSolicitacao ? 'Salvando...' : editandoCampoSolicitacao ? 'Atualizar pergunta' : 'Adicionar pergunta'}</button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setFormularioCampoAberto(false)
+                                      setEditandoCampoSolicitacao(null)
+                                      setNovoCampoSolicitacao({
+                                        nome: '',
+                                        label: '',
+                                        tipo: 'texto',
+                                        obrigatorio: false,
+                                        ordem: camposSolicitacao.length + 1
+                                      })
+                                    }}
+                                    className={styles.btnCancelar}
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
+                              </form>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div id="novo-servico-solicitacao" className={styles.formBox} style={{ marginTop: '16px' }}>
+                <h3 className={styles.secaoTitulo}>{editandoServico ? 'Editar serviço' : 'Novo serviço'}</h3>
+                <form onSubmit={salvarServicoSolicitacao} className={styles.form}>
+                  <div className={styles.formRow}>
+                    <input className={styles.input} placeholder="Nome do serviço *" value={novoServico.nome} onChange={e => setNovoServico(prev => ({ ...prev, nome: e.target.value }))} />
+                    <input className={styles.input} placeholder="Descrição (opcional)" value={novoServico.descricao} onChange={e => setNovoServico(prev => ({ ...prev, descricao: e.target.value }))} />
+                    <input className={styles.input} type="number" min="0" placeholder="Ordem" value={novoServico.ordem} onChange={e => setNovoServico(prev => ({ ...prev, ordem: e.target.value }))} />
+                    <button type="submit" disabled={salvandoSolicitacao} className={styles.btnSalvar}>{salvandoSolicitacao ? 'Salvando...' : editandoServico ? 'Atualizar' : 'Adicionar'}</button>
+                    {editandoServico && <button type="button" onClick={cancelarEdicaoServico} className={styles.btnCancelar}>Cancelar</button>}
+                  </div>
+                </form>
+              </div>
+            </>
+          )}
         </div>
       )}
 

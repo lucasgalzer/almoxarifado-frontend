@@ -17,6 +17,7 @@ import Solicitante from './pages/Solicitante'
 import SuperAdmin from './pages/SuperAdmin'
 import useAuth from './hooks/useAuth'
 import EmprestimosFixos from './pages/EmprestimosFixos'
+import TrocarSenha from './pages/TrocarSenha'
 
 function RedirecionarPorPerfil() {
   const { usuario } = useAuth()
@@ -31,6 +32,11 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+
+         <Route
+    path="/trocar-senha"
+    element={<TrocarSenha />}
+  />
 
         <Route path="/super-admin" element={
           <RotaProtegida>

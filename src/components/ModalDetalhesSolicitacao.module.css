@@ -53,6 +53,7 @@
 .infoBox {
   background: var(--color-surface-alt);
   border-radius: var(--radius-md);
+  
   padding: 14px;
   display: flex;
   flex-direction: column;

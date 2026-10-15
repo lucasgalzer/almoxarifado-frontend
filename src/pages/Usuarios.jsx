@@ -9,17 +9,26 @@ import reactSelectStyles from '../utils/reactSelectStyles'
 const PERFIS = [
   { value: 'admin', label: 'Administrador' },
   { value: 'operador', label: 'Operador' },
-  { value: 'solicitante', label: 'Solicitante' },
 ]
 
 function Usuarios() {
   const { addToast } = useToast()
+
   const [usuarios, setUsuarios] = useState([])
+  const [pessoasDisponiveis, setPessoasDisponiveis] = useState([])
+
   const [carregando, setCarregando] = useState(true)
+  const [carregandoPessoas, setCarregandoPessoas] = useState(false)
+
   const [modalAberto, setModalAberto] = useState(false)
   const [usuarioEditando, setUsuarioEditando] = useState(null)
   const [usuarioDesativando, setUsuarioDesativando] = useState(null)
-  const [form, setForm] = useState({ nome: '', email: '', senha: '', perfil: 'operador' })
+
+  const [form, setForm] = useState({
+    pessoa_id: '',
+    perfil: 'operador',
+  })
+
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
 
@@ -30,70 +39,240 @@ function Usuarios() {
   async function carregarUsuarios() {
     try {
       setCarregando(true)
+
       const { data } = await api.get('/usuarios')
+
       setUsuarios(data)
     } catch (error) {
-      console.error(error)
+      console.error(
+        'Erro ao carregar usuários:',
+        error
+      )
+
+      addToast(
+        error.response?.data?.erro ||
+          'Erro ao carregar usuários',
+        'erro'
+      )
     } finally {
       setCarregando(false)
     }
   }
 
-  function abrirModalNovo() {
+  async function carregarPessoasDisponiveis() {
+    try {
+      setCarregandoPessoas(true)
+
+      const { data } = await api.get(
+        '/usuarios/disponiveis'
+      )
+
+      setPessoasDisponiveis(data)
+    } catch (error) {
+      console.error(
+        'Erro ao carregar pessoas disponíveis:',
+        error
+      )
+
+      addToast(
+        error.response?.data?.erro ||
+          'Erro ao carregar pessoas disponíveis',
+        'erro'
+      )
+    } finally {
+      setCarregandoPessoas(false)
+    }
+  }
+
+  async function abrirModalNovo() {
     setUsuarioEditando(null)
-    setForm({ nome: '', email: '', senha: '', perfil: 'operador' })
+
+    setForm({
+      pessoa_id: '',
+      perfil: 'operador',
+    })
+
     setErro('')
     setModalAberto(true)
+
+    await carregarPessoasDisponiveis()
   }
 
   function abrirModalEditar(usuario) {
     setUsuarioEditando(usuario)
-    setForm({ nome: usuario.nome, email: usuario.email, senha: '', perfil: usuario.perfil })
+
+    setForm({
+      pessoa_id: usuario.pessoa_id || '',
+      perfil: usuario.perfil || 'operador',
+    })
+
     setErro('')
     setModalAberto(true)
   }
 
+  function fecharModal() {
+    setModalAberto(false)
+    setUsuarioEditando(null)
+
+    setForm({
+      pessoa_id: '',
+      perfil: 'operador',
+    })
+
+    setErro('')
+  }
+
   function handleChange(e) {
     const { name, value } = e.target
-    setForm(prev => ({ ...prev, [name]: value }))
+
+    setForm(prev => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  function handlePessoaChange(opcao) {
+    setForm(prev => ({
+      ...prev,
+      pessoa_id: opcao?.value || '',
+    }))
+  }
+
+  function handlePerfilChange(opcao) {
+    setForm(prev => ({
+      ...prev,
+      perfil: opcao?.value || '',
+    }))
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
+
     setErro('')
+
+    if (!usuarioEditando && !form.pessoa_id) {
+      setErro('Selecione uma pessoa')
+      return
+    }
+
+    if (!form.perfil) {
+      setErro('Selecione um perfil')
+      return
+    }
+
     setSalvando(true)
+
     try {
       if (usuarioEditando) {
-        await api.put(`/usuarios/${usuarioEditando.id}`, form)
-        addToast('Usuário atualizado com sucesso!', 'sucesso')
+        await api.put(
+          `/usuarios/${usuarioEditando.id}`,
+          {
+            perfil: form.perfil,
+          }
+        )
+
+        addToast(
+          'Usuário atualizado com sucesso!',
+          'sucesso'
+        )
       } else {
-        await api.post('/usuarios', form)
-        addToast('Usuário criado com sucesso!', 'sucesso')
+        await api.post(
+          '/usuarios',
+          {
+            pessoa_id: form.pessoa_id,
+            perfil: form.perfil,
+          }
+        )
+
+        addToast(
+          'Pessoa adicionada ao setor com sucesso!',
+          'sucesso'
+        )
       }
-      setModalAberto(false)
+
+      fecharModal()
       carregarUsuarios()
     } catch (error) {
-      setErro(error.response?.data?.erro || 'Erro ao salvar usuário')
+      console.error(
+        'Erro ao salvar usuário:',
+        error
+      )
+
+      setErro(
+        error.response?.data?.erro ||
+          'Erro ao salvar usuário'
+      )
     } finally {
       setSalvando(false)
     }
   }
 
   async function toggleAtivo() {
+    if (!usuarioDesativando) {
+      return
+    }
+
     try {
-      await api.put(`/usuarios/${usuarioDesativando.id}`, {
-        ...usuarioDesativando,
-        ativo: !usuarioDesativando.ativo
-      })
-      addToast(
-        usuarioDesativando.ativo ? 'Usuário desativado' : 'Usuário reativado',
-        usuarioDesativando.ativo ? 'aviso' : 'sucesso'
+      await api.patch(
+        `/usuarios/${usuarioDesativando.id}/status`,
+        {
+          ativo: !usuarioDesativando.ativo,
+        }
       )
+
+      addToast(
+        usuarioDesativando.ativo
+          ? 'Usuário desativado'
+          : 'Usuário reativado',
+        usuarioDesativando.ativo
+          ? 'aviso'
+          : 'sucesso'
+      )
+
       setUsuarioDesativando(null)
+
       carregarUsuarios()
     } catch (error) {
-      addToast(error.response?.data?.erro || 'Erro ao atualizar', 'erro')
-      setUsuarioDesativando(null)
+      console.error(
+        'Erro ao atualizar status:',
+        error
+      )
+
+      /*
+       * Compatibilidade caso a rota de status ainda
+       * não exista no backend.
+       */
+      try {
+        await api.put(
+          `/usuarios/${usuarioDesativando.id}`,
+          {
+            perfil: usuarioDesativando.perfil,
+            ativo: !usuarioDesativando.ativo,
+          }
+        )
+
+        addToast(
+          usuarioDesativando.ativo
+            ? 'Usuário desativado'
+            : 'Usuário reativado',
+          usuarioDesativando.ativo
+            ? 'aviso'
+            : 'sucesso'
+        )
+
+        setUsuarioDesativando(null)
+
+        carregarUsuarios()
+      } catch (fallbackError) {
+        addToast(
+          fallbackError.response?.data?.erro ||
+            error.response?.data?.erro ||
+            'Erro ao atualizar status',
+          'erro'
+        )
+
+        setUsuarioDesativando(null)
+      }
     }
   }
 
@@ -101,8 +280,8 @@ function Usuarios() {
     const mapa = {
       admin: 'Administrador',
       operador: 'Operador',
-      solicitante: 'Solicitante',
     }
+
     return mapa[perfil] || perfil
   }
 
@@ -110,28 +289,72 @@ function Usuarios() {
     const mapa = {
       admin: styles.badgeAdmin,
       operador: styles.badgeOperador,
-      solicitante: styles.badgeSolicitante,
     }
+
     return mapa[perfil] || ''
   }
+
+  function nomeUsuario(usuario) {
+    return (
+      usuario.nome_completo ||
+      usuario.nome ||
+      'Pessoa sem nome'
+    )
+  }
+
+  const opcoesPessoas = pessoasDisponiveis.map(
+    pessoa => ({
+      value: pessoa.id,
+      label: `${pessoa.nome_completo}${
+        pessoa.email
+          ? ` — ${pessoa.email}`
+          : ''
+      }`,
+    })
+  )
+
+  const pessoaSelecionada =
+    opcoesPessoas.find(
+      opcao =>
+        opcao.value === form.pessoa_id
+    ) || null
+
+  const perfilSelecionado =
+    PERFIS.find(
+      opcao =>
+        opcao.value === form.perfil
+    ) || null
 
   return (
     <div>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.titulo}>Usuários</h1>
-          <p className={styles.subtitulo}>{usuarios.length} usuário(s) cadastrado(s)</p>
+          <h1 className={styles.titulo}>
+            Usuários
+          </h1>
+
+          <p className={styles.subtitulo}>
+            {usuarios.length} usuário(s) com acesso a este setor
+          </p>
         </div>
-        <button className={styles.btnNovo} onClick={abrirModalNovo}>
-          + Novo Usuário
+
+        <button
+          className={styles.btnNovo}
+          onClick={abrirModalNovo}
+        >
+          + Adicionar pessoa
         </button>
       </div>
 
       <div className={styles.tabela}>
         {carregando ? (
-          <div className={styles.vazio}>Carregando...</div>
+          <div className={styles.vazio}>
+            Carregando...
+          </div>
         ) : usuarios.length === 0 ? (
-          <div className={styles.vazio}>Nenhum usuário encontrado.</div>
+          <div className={styles.vazio}>
+            Nenhuma pessoa possui acesso a este setor.
+          </div>
         ) : (
           <table>
             <thead>
@@ -140,36 +363,97 @@ function Usuarios() {
                 <th>E-mail</th>
                 <th>Perfil</th>
                 <th>Status</th>
-                <th>Criado em</th>
+                <th>Adicionado em</th>
                 <th>Ações</th>
               </tr>
             </thead>
+
             <tbody>
               {usuarios.map(usuario => (
                 <tr key={usuario.id}>
-                  <td><strong>{usuario.nome}</strong></td>
-                  <td>{usuario.email}</td>
                   <td>
-                    <span className={`${styles.badge} ${badgePerfil(usuario.perfil)}`}>
-                      {labelPerfil(usuario.perfil)}
+                    <strong>
+                      {nomeUsuario(usuario)}
+                    </strong>
+                  </td>
+
+                  <td>
+                    {usuario.email || '—'}
+                  </td>
+
+                  <td>
+                    <span
+                      className={`${styles.badge} ${
+                        badgePerfil(
+                          usuario.perfil
+                        )
+                      }`}
+                    >
+                      {labelPerfil(
+                        usuario.perfil
+                      )}
                     </span>
                   </td>
+
                   <td>
-                    <span className={`${styles.badge} ${usuario.ativo ? styles.badgeAtivo : styles.badgeInativo}`}>
-                      {usuario.ativo ? 'Ativo' : 'Inativo'}
+                    <span
+                      className={`${styles.badge} ${
+                        usuario.ativo
+                          ? styles.badgeAtivo
+                          : styles.badgeInativo
+                      }`}
+                    >
+                      {usuario.ativo
+                        ? 'Ativo'
+                        : 'Inativo'}
                     </span>
                   </td>
-                  <td>{new Date(usuario.created_at).toLocaleDateString('pt-BR')}</td>
+
                   <td>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button className={styles.btnEditar} onClick={() => abrirModalEditar(usuario)}>
+                    {usuario.created_at
+                      ? new Date(
+                          usuario.created_at
+                        ).toLocaleDateString(
+                          'pt-BR'
+                        )
+                      : '—'}
+                  </td>
+
+                  <td>
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: '6px',
+                      }}
+                    >
+                      <button
+                        className={
+                          styles.btnEditar
+                        }
+                        onClick={() =>
+                          abrirModalEditar(
+                            usuario
+                          )
+                        }
+                      >
                         Editar
                       </button>
+
                       <button
-                        className={usuario.ativo ? styles.btnDesativar : styles.btnAtivar}
-                        onClick={() => setUsuarioDesativando(usuario)}
+                        className={
+                          usuario.ativo
+                            ? styles.btnDesativar
+                            : styles.btnAtivar
+                        }
+                        onClick={() =>
+                          setUsuarioDesativando(
+                            usuario
+                          )
+                        }
                       >
-                        {usuario.ativo ? 'Desativar' : 'Reativar'}
+                        {usuario.ativo
+                          ? 'Desativar'
+                          : 'Reativar'}
                       </button>
                     </div>
                   </td>
@@ -181,56 +465,174 @@ function Usuarios() {
       </div>
 
       {modalAberto && (
-        <div className={styles.overlay} onClick={() => setModalAberto(false)}>
-          <div className={styles.modal} onClick={e => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2>{usuarioEditando ? 'Editar Usuário' : 'Novo Usuário'}</h2>
-              <button className={styles.btnFechar} onClick={() => setModalAberto(false)}>✕</button>
+        <div
+          className={styles.overlay}
+          onClick={fecharModal}
+        >
+          <div
+            className={styles.modal}
+            onClick={e =>
+              e.stopPropagation()
+            }
+          >
+            <div
+              className={styles.modalHeader}
+            >
+              <h2>
+                {usuarioEditando
+                  ? 'Editar acesso ao setor'
+                  : 'Adicionar pessoa ao setor'}
+              </h2>
+
+              <button
+                type="button"
+                className={styles.btnFechar}
+                onClick={fecharModal}
+              >
+                ✕
+              </button>
             </div>
-            <form onSubmit={handleSubmit} className={styles.form}>
-              {erro && <div className={styles.erro}>{erro}</div>}
 
-              <div className={styles.campo}>
-                <label>Nome *</label>
-                <input name="nome" value={form.nome} onChange={handleChange} placeholder="Nome completo" />
-              </div>
+            <form
+              onSubmit={handleSubmit}
+              className={styles.form}
+            >
+              {erro && (
+                <div
+                  className={styles.erro}
+                >
+                  {erro}
+                </div>
+              )}
 
-              <div className={styles.campo}>
-                <label>E-mail *</label>
-                <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="email@escola.com" />
-              </div>
+              {!usuarioEditando && (
+                <div
+                  className={styles.campo}
+                >
+                  <label>
+                    Pessoa *
+                  </label>
 
-              <div className={styles.campo}>
-                <label>{usuarioEditando ? 'Nova senha (deixe em branco para manter)' : 'Senha *'}</label>
-                <input type="password" name="senha" value={form.senha} onChange={handleChange} placeholder="Mínimo 6 caracteres" />
-              </div>
+                  {carregandoPessoas ? (
+                    <div
+                      className={styles.vazio}
+                      style={{
+                        padding: '10px',
+                      }}
+                    >
+                      Carregando pessoas...
+                    </div>
+                  ) : opcoesPessoas.length ===
+                    0 ? (
+                    <div
+                      className={styles.erro}
+                    >
+                      Não existem pessoas
+                      disponíveis para
+                      adicionar a este setor.
+                    </div>
+                  ) : (
+                    <Select
+                      className={
+                        styles.reactSelect
+                      }
+                      classNamePrefix="react-select"
+                      styles={
+                        reactSelectStyles
+                      }
+                      placeholder="Selecione uma pessoa"
+                      options={
+                        opcoesPessoas
+                      }
+                      value={
+                        pessoaSelecionada
+                      }
+                      onChange={
+                        handlePessoaChange
+                      }
+                      isSearchable
+                      isClearable
+                    />
+                  )}
+                </div>
+              )}
 
-              <div className={styles.campo}>
-                <label>Perfil *</label>
+              {usuarioEditando && (
+                <div
+                  className={styles.campo}
+                >
+                  <label>
+                    Pessoa
+                  </label>
+
+                  <input
+                    type="text"
+                    value={nomeUsuario(
+                      usuarioEditando
+                    )}
+                    disabled
+                  />
+                </div>
+              )}
+
+              <div
+                className={styles.campo}
+              >
+                <label>
+                  Perfil no setor *
+                </label>
+
                 <Select
-                className={styles.reactSelect}
-                classNamePrefix="react-select"
-                styles={reactSelectStyles}
-                placeholder="Selecione o perfil"
-                options={PERFIS}
-                value={PERFIS.find(op => op.value === form.perfil) || null}
-                onChange={(opcao) =>
-                  handleChange({
-                    target: {
-                      name: 'perfil',
-                      value: opcao?.value || '',
-                    },
-                  })
-                }
-              />
+                  className={
+                    styles.reactSelect
+                  }
+                  classNamePrefix="react-select"
+                  styles={
+                    reactSelectStyles
+                  }
+                  placeholder="Selecione o perfil"
+                  options={PERFIS}
+                  value={
+                    perfilSelecionado
+                  }
+                  onChange={
+                    handlePerfilChange
+                  }
+                  isSearchable={false}
+                />
               </div>
 
-              <div className={styles.modalAcoes}>
-                <button type="button" onClick={() => setModalAberto(false)} className={styles.btnCancelar}>
+              <div
+                className={styles.modalAcoes}
+              >
+                <button
+                  type="button"
+                  onClick={fecharModal}
+                  className={
+                    styles.btnCancelar
+                  }
+                  disabled={salvando}
+                >
                   Cancelar
                 </button>
-                <button type="submit" disabled={salvando} className={styles.btnSalvar}>
-                  {salvando ? 'Salvando...' : 'Salvar'}
+
+                <button
+                  type="submit"
+                  disabled={
+                    salvando ||
+                    (
+                      !usuarioEditando &&
+                      opcoesPessoas.length ===
+                        0
+                    )
+                  }
+                  className={
+                    styles.btnSalvar
+                  }
+                >
+                  {salvando
+                    ? 'Salvando...'
+                    : 'Adicionar'}
                 </button>
               </div>
             </form>
@@ -240,11 +642,27 @@ function Usuarios() {
 
       {usuarioDesativando && (
         <ModalConfirmacao
-          titulo={usuarioDesativando.ativo ? 'Desativar usuário' : 'Reativar usuário'}
-          mensagem={`Tem certeza que deseja ${usuarioDesativando.ativo ? 'desativar' : 'reativar'} o usuário "${usuarioDesativando.nome}"?`}
+          titulo={
+            usuarioDesativando.ativo
+              ? 'Desativar acesso'
+              : 'Reativar acesso'
+          }
+          mensagem={`Tem certeza que deseja ${
+            usuarioDesativando.ativo
+              ? 'desativar'
+              : 'reativar'
+          } o acesso de "${nomeUsuario(
+            usuarioDesativando
+          )}" a este setor?`}
           onConfirmar={toggleAtivo}
-          onCancelar={() => setUsuarioDesativando(null)}
-          tipo={usuarioDesativando.ativo ? 'perigo' : 'aviso'}
+          onCancelar={() =>
+            setUsuarioDesativando(null)
+          }
+          tipo={
+            usuarioDesativando.ativo
+              ? 'perigo'
+              : 'aviso'
+          }
         />
       )}
     </div>
