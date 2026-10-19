@@ -116,6 +116,8 @@ function Emprestimos() {
 
   const [salvando, setSalvando] = useState(false)
   const [buscandoProduto, setBuscandoProduto] = useState(false)
+  const [verificandoDisponibilidade, setVerificandoDisponibilidade] = useState(false)
+  const [disponibilidade, setDisponibilidade] = useState(null)
 
   const [devolucaoForm, setDevolucaoForm] = useState({
     observacoes: '',
@@ -130,6 +132,61 @@ function Emprestimos() {
   useEffect(() => {
     carregarEmprestimos()
   }, [filtroStatus, filtroPessoa])
+
+  useEffect(() => {
+    const periodoCompleto =
+      form.data_retirada &&
+      form.periodo_retirada_id &&
+      form.data_devolucao_prevista &&
+      form.periodo_devolucao_prevista_id
+
+    if (!modalNovo || !itensForm.length || !periodoCompleto) {
+      setDisponibilidade(null)
+      setVerificandoDisponibilidade(false)
+      return
+    }
+
+    let ativo = true
+    const timer = setTimeout(async () => {
+      setVerificandoDisponibilidade(true)
+      setDisponibilidade(null)
+
+      try {
+        const { data } = await api.post('/emprestimos/disponibilidade', {
+          itens: itensForm.map(item => ({
+            produto_id: item.produto_id,
+            quantidade: item.quantidade
+          })),
+          data_retirada: form.data_retirada,
+          periodo_retirada_id: form.periodo_retirada_id,
+          data_devolucao_prevista: form.data_devolucao_prevista,
+          periodo_devolucao_prevista_id: form.periodo_devolucao_prevista_id
+        })
+        if (ativo) setDisponibilidade(data)
+      } catch (error) {
+        if (ativo) {
+          setDisponibilidade({
+            disponivel: false,
+            erro: error.response?.data?.erro || 'Não foi possível verificar a disponibilidade.'
+          })
+        }
+      } finally {
+        if (ativo) setVerificandoDisponibilidade(false)
+      }
+    }, 250)
+
+    return () => {
+      ativo = false
+      clearTimeout(timer)
+    }
+  }, [
+    modalNovo,
+    itensForm,
+    form.data_retirada,
+    form.periodo_retirada_id,
+    form.data_devolucao_prevista,
+    form.periodo_devolucao_prevista_id
+  ])
 
   async function carregarDadosIniciais() {
     try {
@@ -436,14 +493,30 @@ function Emprestimos() {
       return
     }
 
-    if (
-      form.data_devolucao_prevista &&
-      !form.periodo_devolucao_prevista_id
-    ) {
-      addToast(
-        'Selecione o período previsto para devolução',
-        'erro'
-      )
+    if (!form.data_devolucao_prevista || !form.periodo_devolucao_prevista_id) {
+      addToast('Informe a data e o período previstos para devolução para verificar a disponibilidade.', 'erro')
+      return
+    }
+
+    if (form.data_devolucao_prevista < form.data_retirada) {
+      addToast('A devolução não pode ocorrer antes da retirada.', 'erro')
+      return
+    }
+
+    const ordemRetirada = periodos.find(p => String(p.id) === String(form.periodo_retirada_id))?.ordem
+    const ordemDevolucao = periodos.find(p => String(p.id) === String(form.periodo_devolucao_prevista_id))?.ordem
+    if (form.data_devolucao_prevista === form.data_retirada && Number(ordemDevolucao) <= Number(ordemRetirada)) {
+      addToast('O período de devolução deve ser posterior ao período de retirada.', 'erro')
+      return
+    }
+
+    if (verificandoDisponibilidade || !disponibilidade) {
+      addToast('Aguarde a verificação de disponibilidade antes de registrar.', 'erro')
+      return
+    }
+
+    if (!disponibilidade.disponivel) {
+      addToast(disponibilidade.erro || (disponibilidade.resultados || []).filter(item => !item.disponivel).map(item => item.detalhe || item.mensagem || item.produto).join(' ') || 'Há equipamentos indisponíveis no período selecionado.', 'erro')
       return
     }
 
@@ -1379,6 +1452,39 @@ function Emprestimos() {
 
                 <div />
               </div>
+
+
+              {itensForm.length > 0 &&
+                form.data_retirada &&
+                form.periodo_retirada_id &&
+                form.data_devolucao_prevista &&
+                form.periodo_devolucao_prevista_id && (
+                  <div
+                    role="status"
+                    style={{
+                      margin: '12px 0',
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      border: `1px solid ${verificandoDisponibilidade ? '#93c5fd' : disponibilidade?.disponivel ? '#86efac' : '#fca5a5'}`,
+                      background: verificandoDisponibilidade ? '#eff6ff' : disponibilidade?.disponivel ? '#f0fdf4' : '#fef2f2',
+                      color: verificandoDisponibilidade ? '#1d4ed8' : disponibilidade?.disponivel ? '#166534' : '#991b1b',
+                      fontSize: 13
+                    }}
+                  >
+                    {verificandoDisponibilidade
+                      ? 'Verificando disponibilidade para todas as datas e períodos...'
+                      : disponibilidade?.erro
+                        ? disponibilidade.erro
+                        : disponibilidade?.disponivel
+                          ? 'Disponibilidade confirmada para o período selecionado.'
+                          : disponibilidade
+                            ? (disponibilidade.resultados || [])
+                                .filter(item => !item.disponivel)
+                                .map(item => `${item.produto || item.codigo_interno || 'Produto'}: ${item.detalhe || item.mensagem || 'indisponível no período'}`)
+                                .join(' ')
+                            : 'Aguardando verificação de disponibilidade...'}
+                  </div>
+                )}
 
               <div className={styles.secaoProduto}>
                 <div className={styles.secaoTitulo}>
