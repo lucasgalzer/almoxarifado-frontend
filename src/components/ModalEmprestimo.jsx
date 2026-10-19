@@ -10,6 +10,7 @@ function ModalEmprestimo({ onFechar, onSalvar }) {
   const { addToast } = useToast()
 
   const [pessoas, setPessoas] = useState([])
+  const [periodos, setPeriodos] = useState([])
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState('')
   const [buscandoProduto, setBuscandoProduto] = useState(false)
@@ -19,6 +20,10 @@ function ModalEmprestimo({ onFechar, onSalvar }) {
   const [form, setForm] = useState({
     codigo_interno: '',
     pessoa_id: '',
+    data_retirada: '',
+    periodo_retirada_id: '',
+    data_devolucao_prevista: '',
+    periodo_devolucao_prevista_id: '',
     observacoes: '',
   })
 
@@ -33,6 +38,13 @@ function ModalEmprestimo({ onFechar, onSalvar }) {
     api.get('/pessoas', { params: { ativo: true } })
       .then(({ data }) => setPessoas(data))
       .catch(console.error)
+
+    api.get('/emprestimos/periodos')
+      .then(({ data }) => setPeriodos(data))
+      .catch(error => {
+        console.error(error)
+        setErro('Não foi possível carregar os períodos de aula')
+      })
 
     setTimeout(() => codigoRef.current?.focus(), 100)
   }, [])
@@ -94,24 +106,6 @@ if (
 ) {
   setErro(`"${produto.nome}" está ${produto.status}`)
   tocarSom('erro')
-  return
-}
-
-      // Verifica se este equipamento já está emprestado
-const { data: emprestimosAtivos } = await api.get('/emprestimos', {
-  params: {
-    status: 'emprestado',
-    produto_id: produto.id
-  }
-})
-
-if (emprestimosAtivos.length > 0) {
-  const emprestimo = emprestimosAtivos[0]
-
-  setErro(
-    `"${produto.nome}" (${produto.codigo_interno}) já está emprestado para ${emprestimo.pessoa_nome}`
-  )
-
   return
 }
 
@@ -184,13 +178,41 @@ if (emprestimosAtivos.length > 0) {
       return setErro('Selecione uma pessoa')
     }
 
+    if (!form.data_retirada || !form.periodo_retirada_id) {
+      return setErro('Informe a data e o período da retirada')
+    }
+
+    if (!form.data_devolucao_prevista || !form.periodo_devolucao_prevista_id) {
+      return setErro('Informe a data e o período previstos para a devolução')
+    }
+
+    if (form.data_devolucao_prevista < form.data_retirada) {
+      return setErro('A devolução não pode ocorrer antes da retirada')
+    }
+
+    if (
+      form.data_devolucao_prevista === form.data_retirada &&
+      Number(periodos.find(p => String(p.id) === String(form.periodo_devolucao_prevista_id))?.ordem) <=
+        Number(periodos.find(p => String(p.id) === String(form.periodo_retirada_id))?.ordem)
+    ) {
+      return setErro('O período de devolução deve ser posterior ao período de retirada')
+    }
+
     setCarregando(true)
 
     try {
       await api.post('/emprestimos', {
-        produtos_ids: produtosSelecionados.map(produto => produto.id),
         pessoa_id: form.pessoa_id,
+        data_retirada: form.data_retirada,
+        periodo_retirada_id: form.periodo_retirada_id,
+        data_devolucao_prevista: form.data_devolucao_prevista,
+        periodo_devolucao_prevista_id: form.periodo_devolucao_prevista_id,
         observacoes: form.observacoes,
+        origem: 'direto',
+        itens: produtosSelecionados.map(produto => ({
+          produto_id: produto.id,
+          quantidade: 1,
+        })),
       })
 
       addToast(
@@ -522,6 +544,75 @@ if (emprestimosAtivos.length > 0) {
 
             )}
 
+          </div>
+
+          {/* PERÍODO DO EMPRÉSTIMO */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+              gap: '12px',
+              padding: '14px',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+            }}
+          >
+            <div className={styles.campo}>
+              <label>Data da retirada *</label>
+              <input
+                type="date"
+                name="data_retirada"
+                value={form.data_retirada}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className={styles.campo}>
+              <label>Período da retirada *</label>
+              <select
+                name="periodo_retirada_id"
+                value={form.periodo_retirada_id}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Selecione o período</option>
+                {periodos.map(periodo => (
+                  <option key={periodo.id} value={periodo.id}>
+                    {periodo.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className={styles.campo}>
+              <label>Data prevista da devolução *</label>
+              <input
+                type="date"
+                name="data_devolucao_prevista"
+                min={form.data_retirada || undefined}
+                value={form.data_devolucao_prevista}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className={styles.campo}>
+              <label>Período previsto da devolução *</label>
+              <select
+                name="periodo_devolucao_prevista_id"
+                value={form.periodo_devolucao_prevista_id}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Selecione o período</option>
+                {periodos.map(periodo => (
+                  <option key={periodo.id} value={periodo.id}>
+                    {periodo.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* OBSERVAÇÕES */}
