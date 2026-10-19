@@ -30,6 +30,11 @@ function ModalSolicitacao({ onFechar, onSalvar }) {
     [catalogo.servicos, setorId]
   )
   const servico = servicosDoSetor.find(item => String(item.id) === String(servicoId))
+  // Serviços de reserva sempre exigem recurso e períodos como campos padrão.
+  // Os campos adicionais continuam sendo configurados separadamente.
+  const reservaPadrao = Boolean(servico && /reserva/i.test(servico.nome))
+  const usaRecurso = Boolean(servico && (servico.usa_recurso || reservaPadrao))
+  const usaPeriodos = Boolean(servico && (servico.usa_periodos || reservaPadrao))
 
   function resetarFormulario() {
     setRespostas({})
@@ -86,11 +91,11 @@ function ModalSolicitacao({ onFechar, onSalvar }) {
     if (!servico) return setErro('Selecione o serviço que deseja solicitar.')
 
     const respostasPayload = (servico.campos || []).map(campo => ({ campo_id: campo.id, valor: respostas[campo.id] ?? '' }))
-    if (servico.usa_recurso && (!itens.length || itens.some(item => !item.servico_recurso_id || !Number.isFinite(Number(item.quantidade)) || Number(item.quantidade) <= 0))) {
+    if (usaRecurso && (!itens.length || itens.some(item => !item.servico_recurso_id || !Number.isFinite(Number(item.quantidade)) || Number(item.quantidade) <= 0))) {
       return setErro('Selecione os recursos e informe uma quantidade válida para todos os itens.')
     }
     let periodosPayload = []
-    if (servico.usa_periodos) {
+    if (usaPeriodos) {
       if (!periodos.length || periodos.some(item => !item.data || !item.periodo_id)) return setErro('Preencha a data e o período para cada horário solicitado.')
       const chaves = periodos.map(item => `${item.data}|${item.periodo_id}`)
       if (new Set(chaves).size !== chaves.length) return setErro('Remova datas e períodos duplicados.')
@@ -104,7 +109,7 @@ function ModalSolicitacao({ onFechar, onSalvar }) {
         servico_id: servico.id,
         observacoes,
         respostas: respostasPayload,
-        itens: servico.usa_recurso ? itens.map(item => ({
+        itens: usaRecurso ? itens.map(item => ({
           servico_recurso_id: item.servico_recurso_id,
           quantidade: Number(item.quantidade),
           observacoes: item.observacoes || null,
@@ -154,7 +159,7 @@ function ModalSolicitacao({ onFechar, onSalvar }) {
                 {renderCampo(campo)}
               </div>
             ))}
-            {servico?.usa_recurso && <section style={{ border: '1px solid var(--color-border)', borderRadius: 8, padding: 14 }}>
+            {usaRecurso && <section style={{ border: '1px solid var(--color-border)', borderRadius: 8, padding: 14 }}>
               <h3 style={{ marginTop: 0 }}>Recursos solicitados *</h3>
               {itens.map((item, index) => <div key={index} style={{ display: 'grid', gridTemplateColumns: 'minmax(180px, 2fr) minmax(80px, .6fr) 36px', gap: 8, marginBottom: 10, alignItems: 'end' }}>
                 <div className={styles.campo}><label>Recurso</label><select value={item.servico_recurso_id} onChange={e => mudarItem(index, 'servico_recurso_id', e.target.value)} required>
@@ -167,7 +172,7 @@ function ModalSolicitacao({ onFechar, onSalvar }) {
               <button type="button" className={styles.btnCancelar} onClick={() => setItens(prev => [...prev, { servico_recurso_id: '', quantidade: 1, observacoes: '' }])}>+ Adicionar recurso</button>
               {!(servico.recursos || []).length && <p style={{ color: 'var(--color-text-muted)' }}>Nenhum recurso foi vinculado a este serviço.</p>}
             </section>}
-            {servico?.usa_periodos && <section style={{ border: '1px solid var(--color-border)', borderRadius: 8, padding: 14 }}>
+            {usaPeriodos && <section style={{ border: '1px solid var(--color-border)', borderRadius: 8, padding: 14 }}>
               <h3 style={{ marginTop: 0 }}>Datas e períodos *</h3>
               {periodos.map((periodo, index) => <div key={index} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 36px', gap: 8, marginBottom: 10, alignItems: 'end' }}>
                 <div className={styles.campo}><label>Data</label><input type="date" value={periodo.data} onChange={e => mudarPeriodo(index, 'data', e.target.value)} required /></div>
