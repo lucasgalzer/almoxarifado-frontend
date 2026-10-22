@@ -49,18 +49,25 @@ function Dashboard() {
       const [
         { data: indicadores },
         { data: alertasData },
-        { data: instituicao },
-        { data: reservasData }
+        { data: instituicao }
       ] = await Promise.all([
         api.get('/dashboard/indicadores'),
         api.get('/alertas'),
-        api.get('/instituicao'),
-        api.get('/dashboard/reservas', { params: { data: dataHoje } })
+        api.get('/instituicao')
       ])
 
       setDados(indicadores)
       setAlertas(Array.isArray(alertasData) ? alertasData : [])
-      setReservas(Array.isArray(reservasData) ? reservasData : [])
+
+      // A falha na consulta das reservas não deve afetar os cards existentes.
+      try {
+        const { data: reservasData } = await api.get('/dashboard/reservas', {
+          params: { data: dataHoje }
+        })
+        setReservas(Array.isArray(reservasData) ? reservasData : [])
+      } catch (erroReservas) {
+        console.error('Erro ao carregar notificações de reservas:', erroReservas)
+      }
 
       setMenusInstituicao(
         Array.isArray(instituicao?.menus) ? instituicao.menus : []
