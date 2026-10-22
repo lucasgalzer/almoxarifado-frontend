@@ -7,9 +7,7 @@ import {
   ClipboardList,
   AlertTriangle,
   CheckCircle,
-  CalendarDays,
-  Clock3,
-  MapPin
+  CalendarDays
 } from 'lucide-react'
 import api from '../services/api'
 import useAuth from '../hooks/useAuth'
@@ -33,25 +31,21 @@ function Dashboard() {
   const [dados, setDados] = useState(null)
   const [alertas, setAlertas] = useState([])
   const [reservas, setReservas] = useState([])
-  const [dataAgenda, setDataAgenda] = useState(() => dataLocalISO())
   const [carregando, setCarregando] = useState(true)
-  const [carregandoReservas, setCarregandoReservas] = useState(true)
 
   const [menusInstituicao, setMenusInstituicao] = useState([])
   const [cardsInstituicao, setCardsInstituicao] = useState([])
 
   useEffect(() => {
-    carregarDashboard(dataAgenda)
+    carregarDashboard()
 
-    const intervalo = setInterval(() => {
-      carregarDashboard(dataAgenda)
-    }, 10000)
-
+    const intervalo = setInterval(carregarDashboard, 10000)
     return () => clearInterval(intervalo)
-  }, [dataAgenda])
+  }, [])
 
-  async function carregarDashboard(dataSelecionada) {
+  async function carregarDashboard() {
     try {
+      const dataHoje = dataLocalISO()
       const [
         { data: indicadores },
         { data: alertasData },
@@ -61,9 +55,7 @@ function Dashboard() {
         api.get('/dashboard/indicadores'),
         api.get('/alertas'),
         api.get('/instituicao'),
-        api.get('/dashboard/reservas', {
-          params: { data: dataSelecionada }
-        })
+        api.get('/dashboard/reservas', { params: { data: dataHoje } })
       ])
 
       setDados(indicadores)
@@ -81,7 +73,6 @@ function Dashboard() {
       console.error('Erro ao carregar dashboard:', err)
     } finally {
       setCarregando(false)
-      setCarregandoReservas(false)
     }
   }
 
@@ -96,6 +87,7 @@ function Dashboard() {
           bg: '#eff6ff',
           rota: '/produtos'
         },
+
         {
           menu: 'emprestimos',
           label: 'Empréstimos em aberto',
@@ -105,6 +97,7 @@ function Dashboard() {
           bg: '#fffbeb',
           rota: '/emprestimos'
         },
+
         {
           menu: 'manutencao',
           label: 'Em manutenção',
@@ -114,6 +107,7 @@ function Dashboard() {
           bg: '#fef2f2',
           rota: '/manutencao'
         },
+
         {
           menu: 'solicitacoes',
           label: 'Solicitações pendentes',
@@ -126,20 +120,16 @@ function Dashboard() {
       ].filter(card => cardsInstituicao.includes(card.menu))
     : []
 
-  const dataFormatada = dataAgenda
-    ? new Date(`${dataAgenda}T12:00:00`).toLocaleDateString('pt-BR', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-      })
-    : ''
-
   return (
     <div className={styles.page}>
+
       <div className={styles.header}>
+
         <div>
-          <h1 className={styles.titulo}>Dashboard</h1>
+          <h1 className={styles.titulo}>
+            Dashboard
+          </h1>
+
           {usuario?.setor_nome && (
             <div
               style={{
@@ -154,115 +144,109 @@ function Dashboard() {
         </div>
 
         <div className={styles.data}>
-          {new Date().toLocaleDateString('pt-BR', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long'
-          })}
+          {new Date().toLocaleDateString(
+            'pt-BR',
+            {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long'
+            }
+          )}
         </div>
+
       </div>
 
       <div className={styles.cards}>
+
         {carregando ? (
+
           [1, 2, 3, 4].map(i => (
-            <div key={i} className={styles.cardSkeleton} />
+            <div
+              key={i}
+              className={styles.cardSkeleton}
+            />
           ))
+
         ) : (
+
           cards.map(card => {
+
             const Icon = card.icon
 
             return (
               <div
                 key={card.label}
                 className={styles.card}
-                onClick={() => navigate(card.rota)}
+                onClick={() =>
+                  navigate(card.rota)
+                }
               >
+
                 <div
-                  className={styles.cardIconWrapper}
-                  style={{ background: card.bg }}
+                  className={
+                    styles.cardIconWrapper
+                  }
+                  style={{
+                    background: card.bg
+                  }}
                 >
-                  <Icon size={20} color={card.cor} />
+                  <Icon
+                    size={20}
+                    color={card.cor}
+                  />
                 </div>
 
                 <span
                   className={styles.cardValor}
-                  style={{ color: card.cor }}
+                  style={{
+                    color: card.cor
+                  }}
                 >
                   {card.valor}
                 </span>
 
-                <p className={styles.cardLabel}>{card.label}</p>
+                <p
+                  className={
+                    styles.cardLabel
+                  }
+                >
+                  {card.label}
+                </p>
+
               </div>
             )
           })
+
         )}
+
       </div>
 
-      <section className={styles.secao}>
-        <div className={styles.agendaHeader}>
-          <div>
-            <h2 className={styles.agendaTitulo}>
-              <CalendarDays size={19} />
-              Reservas do dia
-            </h2>
-            <p className={styles.agendaSubtitulo}>
-              Somente reservas aprovadas do setor
-            </p>
-          </div>
-
-          <label className={styles.seletorData}>
-            <span>Data</span>
-            <input
-              type="date"
-              value={dataAgenda}
-              onChange={event => {
-                setCarregandoReservas(true)
-                setDataAgenda(event.target.value)
-              }}
-            />
-          </label>
-        </div>
-
-        <div className={styles.agenda}>
-          {carregandoReservas ? (
-            <div className={styles.agendaVazia}>Carregando reservas...</div>
-          ) : reservas.length === 0 ? (
-            <div className={styles.agendaVazia}>
-              Nenhuma reserva aprovada para {dataFormatada}.
-            </div>
-          ) : (
-            reservas.map(reserva => (
-              <article key={reserva.id} className={styles.reservaItem}>
-                <div className={styles.reservaHorario}>
-                  <strong>{formatarHora(reserva.hora_inicio)}</strong>
-                  <span>{formatarHora(reserva.hora_fim)}</span>
-                </div>
-
-                <div className={styles.reservaDetalhes}>
-                  <strong>{reserva.titulo}</strong>
-                  <span>{reserva.servico_nome}</span>
-                  <span>Solicitante: {reserva.solicitante_nome}</span>
-                </div>
-
-                <div className={styles.reservaLocal}>
-                  <MapPin size={15} />
-                  <span>{reserva.local}</span>
-                </div>
-              </article>
-            ))
-          )}
-        </div>
-      </section>
-
       <div className={styles.tudo}>
+
         {alertas.length === 0 ? (
+
           <>
-            <CheckCircle size={18} color="#7eb82c" />
-            <span>Estoque em ordem — nenhum alerta no momento</span>
+            <CheckCircle
+              size={18}
+              color="#7eb82c"
+            />
+
+            <span>
+              Estoque em ordem — nenhum alerta
+              no momento
+            </span>
           </>
+
         ) : (
-          <div style={{ width: '100%' }}>
+
+          <div
+            style={{
+              width: '100%'
+            }}
+          >
+
             {alertas.map(alerta => (
+
               <div
                 key={alerta.id}
                 style={{
@@ -270,19 +254,71 @@ function Dashboard() {
                   alignItems: 'center',
                   gap: '10px',
                   padding: '10px 0',
-                  borderBottom: '1px solid #e5e7eb'
+                  borderBottom:
+                    '1px solid #e5e7eb'
                 }}
               >
-                <AlertTriangle size={18} color="#f59e0b" />
-                <div style={{ flex: 1 }}>
-                  <strong>{alerta.titulo}</strong>
-                  <div>{alerta.mensagem}</div>
+
+                <AlertTriangle
+                  size={18}
+                  color="#f59e0b"
+                />
+
+                <div
+                  style={{
+                    flex: 1
+                  }}
+                >
+
+                  <strong>
+                    {alerta.titulo}
+                  </strong>
+
+                  <div>
+                    {alerta.mensagem}
+                  </div>
+
                 </div>
+
               </div>
+
             ))}
+
           </div>
+
         )}
+
       </div>
+
+      <div className={styles.tudo}>
+        <CalendarDays size={18} color="#6366f1" />
+        <div style={{ flex: 1 }}>
+          <strong>
+            {reservas.length === 0
+              ? 'Nenhuma reserva aprovada para hoje'
+              : `${reservas.length} ${reservas.length === 1 ? 'reserva aprovada' : 'reservas aprovadas'} para hoje`}
+          </strong>
+
+          {reservas.map(reserva => (
+            <div
+              key={reserva.id}
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '4px 10px',
+                paddingTop: '7px'
+              }}
+            >
+              <span>
+                {formatarHora(reserva.hora_inicio)}–{formatarHora(reserva.hora_fim)}
+              </span>
+              <span>{reserva.titulo}</span>
+              <span>{reserva.local}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
     </div>
   )
 }
