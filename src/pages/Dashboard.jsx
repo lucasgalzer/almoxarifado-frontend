@@ -315,7 +315,10 @@ function Dashboard() {
               <span>
                 {reserva.horario || reserva.periodo_nome || 'Horário não informado'}
               </span>
-              <span>{reserva.titulo || 'Reserva'}</span>
+              <span>{reserva.titulo || reserva.servico_nome || 'Reserva'}</span>
+              {reserva.servico_nome && reserva.titulo && reserva.servico_nome !== reserva.titulo && (
+                <span>Serviço: {reserva.servico_nome}</span>
+              )}
               {reserva.solicitante_nome && (
                 <span>Solicitante: {reserva.solicitante_nome}</span>
               )}
