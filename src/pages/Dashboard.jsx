@@ -20,10 +20,6 @@ function dataLocalISO(data = new Date()) {
   return `${ano}-${mes}-${dia}`
 }
 
-function formatarHora(hora) {
-  return hora ? String(hora).slice(0, 5) : '--:--'
-}
-
 function Dashboard() {
   const { usuario } = useAuth()
   const navigate = useNavigate()
@@ -317,10 +313,12 @@ function Dashboard() {
               }}
             >
               <span>
-                {formatarHora(reserva.hora_inicio)}–{formatarHora(reserva.hora_fim)}
+                {reserva.horario || reserva.periodo_nome || 'Horário não informado'}
               </span>
-              <span>{reserva.titulo}</span>
-              <span>{reserva.local}</span>
+              <span>{reserva.titulo || 'Reserva'}</span>
+              {reserva.solicitante_nome && (
+                <span>Solicitante: {reserva.solicitante_nome}</span>
+              )}
             </div>
           ))}
         </div>
