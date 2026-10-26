@@ -453,8 +453,11 @@ function Emprestimos() {
 
     if (!codigo || buscandoProduto) return
 
+    const termo = codigo.toLocaleLowerCase('pt-BR')
     const encontrado = produtos.find(
-      produto => String(produto.codigo_interno || '').trim().toLocaleLowerCase('pt-BR') === codigo.toLocaleLowerCase('pt-BR')
+      produto => String(produto.codigo_interno || '').trim().toLocaleLowerCase('pt-BR') === termo
+    ) || produtos.find(produto =>
+      String(produto.nome || '').toLocaleLowerCase('pt-BR').includes(termo)
     )
 
     if (!encontrado) {
@@ -464,7 +467,7 @@ function Emprestimos() {
       return
     }
 
-    // O Enter do leitor adiciona diretamente o produto, sem etapa de busca/seleção.
+    // Leitor: adiciona pelo código. Busca por nome: adiciona o primeiro resultado.
     adicionarProdutoAoEmprestimo(encontrado, 1)
   }
 
@@ -1283,6 +1286,67 @@ function Emprestimos() {
               onSubmit={salvarEmprestimo}
               className={styles.modalBody}
             >
+              {/* A pessoa é obrigatória para registrar o empréstimo. */}
+              <label className={styles.pessoaAutocomplete}>
+                Pessoa
+                <input
+                  value={pessoaBusca}
+                  onChange={event => {
+                    const valor = event.target.value
+                    setPessoaBusca(valor)
+                    setPessoaDropdownAberto(true)
+                    setPessoaIndiceAtivo(0)
+                    setForm(prev => ({ ...prev, pessoa_id: '' }))
+                  }}
+                  onFocus={() => setPessoaDropdownAberto(true)}
+                  onBlur={() => setTimeout(() => setPessoaDropdownAberto(false), 150)}
+                  onKeyDown={event => {
+                    if (event.key === 'ArrowDown') {
+                      event.preventDefault()
+                      setPessoaDropdownAberto(true)
+                      setPessoaIndiceAtivo(prev => Math.min(prev + 1, Math.max(pessoasFiltradas.length - 1, 0)))
+                    } else if (event.key === 'ArrowUp') {
+                      event.preventDefault()
+                      setPessoaIndiceAtivo(prev => Math.max(prev - 1, 0))
+                    } else if (event.key === 'Enter' && pessoaDropdownAberto && pessoasFiltradas.length) {
+                      event.preventDefault()
+                      const pessoa = pessoasFiltradas[pessoaIndiceAtivo] || pessoasFiltradas[0]
+                      setForm(prev => ({ ...prev, pessoa_id: String(pessoa.value) }))
+                      setPessoaBusca(pessoa.label)
+                      setPessoaDropdownAberto(false)
+                    } else if (event.key === 'Escape') {
+                      setPessoaDropdownAberto(false)
+                    }
+                  }}
+                  placeholder="Digite o nome da pessoa..."
+                  autoComplete="off"
+                  required
+                />
+                {pessoaDropdownAberto && pessoasFiltradas.length > 0 && (
+                  <div className={styles.pessoaSugestoes}>
+                    {pessoasFiltradas.map((pessoa, indice) => (
+                      <button
+                        type="button"
+                        key={pessoa.value}
+                        className={indice === pessoaIndiceAtivo ? styles.pessoaOpcaoAtiva : ''}
+                        onMouseDown={event => event.preventDefault()}
+                        onMouseEnter={() => setPessoaIndiceAtivo(indice)}
+                        onClick={() => {
+                          setForm(prev => ({ ...prev, pessoa_id: String(pessoa.value) }))
+                          setPessoaBusca(pessoa.label)
+                          setPessoaDropdownAberto(false)
+                        }}
+                      >
+                        {pessoa.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {pessoaBusca && !form.pessoa_id && !pessoaDropdownAberto && (
+                  <small>Selecione uma pessoa da lista para continuar.</small>
+                )}
+              </label>
+
               {/* Datas e períodos não são solicitados no novo fluxo. A API ainda recebe metadados internos. */}
               {itensForm.length > 0 && verificandoDisponibilidade && (
                 <div role="status" className={styles.avisoDisponibilidade}>Verificando disponibilidade dos produtos...</div>
@@ -1319,13 +1383,6 @@ function Emprestimos() {
                     autoComplete="off"
                   />
 
-                  <button
-                    type="button"
-                    onClick={buscarProdutoPorCodigo}
-                    disabled={buscandoProduto || !codigoProduto.trim()}
-                  >
-                    Adicionar pelo código
-                  </button>
                 </div>
 
                 {produtosFiltrados.length > 0 &&
@@ -1340,11 +1397,7 @@ function Emprestimos() {
                           <button
                             type="button"
                             key={produto.id}
-                            onClick={() =>
-                              selecionarProduto(
-                                produto
-                              )
-                            }
+                            onClick={() => adicionarProdutoAoEmprestimo(produto, 1)}
                           >
                             <strong>
                               {produto.nome}
@@ -1415,14 +1468,6 @@ function Emprestimos() {
                         />
                       )}
 
-                      <button
-                        type="button"
-                        onClick={
-                          adicionarProduto
-                        }
-                      >
-                        Adicionar
-                      </button>
                     </div>
                   </div>
                 )}
