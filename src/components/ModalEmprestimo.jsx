@@ -3,7 +3,6 @@ import api from '../services/api'
 import { useToast } from './Toast'
 import styles from './ModalProduto.module.css'
 import Select from 'react-select'
-import reactSelectStyles from '../utils/reactSelectStyles'
 import { tocarSom } from '../utils/sons'
 
 function ModalEmprestimo({ onFechar, onSalvar }) {
@@ -377,7 +376,6 @@ if (
             <Select
               className={styles.reactSelect}
               classNamePrefix="react-select"
-              styles={reactSelectStyles}
               placeholder="Selecione uma pessoa"
               options={opcoesPessoas}
               value={
