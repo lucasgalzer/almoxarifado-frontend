@@ -388,7 +388,7 @@ if (
               onChange={opcao =>
                 setForm(prev => ({
                   ...prev,
-                  pessoa_id: opcao?.value || '',
+                  pessoa_id: String(opcao?.value || ''),
                 }))
               }
               isClearable
@@ -429,6 +429,23 @@ if (
 
             </div>
 
+            {produtosFiltrados.length > 0 && (
+              <div style={{ marginTop: 6, border: '1px solid var(--color-border)', borderRadius: 6, overflow: 'hidden' }}>
+                {produtosFiltrados.map(produto => (
+                  <button
+                    key={produto.id}
+                    type="button"
+                    onMouseDown={event => event.preventDefault()}
+                    onClick={() => handleSelecionarProduto(produto)}
+                    style={{ display: 'flex', flexDirection: 'column', width: '100%', padding: '8px 10px', textAlign: 'left', border: 0, borderBottom: '1px solid var(--color-border)', background: 'var(--color-surface)', cursor: 'pointer' }}
+                  >
+                    <strong>{produto.nome}</strong>
+                    <small>{produto.codigo_interno} — Estoque: {produto.quantidade_atual ?? 0}</small>
+                  </button>
+                ))}
+              </div>
+            )}
+
             <span
               style={{
                 fontSize: '11px',
@@ -436,7 +453,7 @@ if (
                 marginTop: '5px',
               }}
             >
-              Escaneie o código de barras ou digite o código e pressione Enter.
+              Escaneie o código de barras ou digite o código/nome e pressione Enter.
             </span>
 
           </div>
