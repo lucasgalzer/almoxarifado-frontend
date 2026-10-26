@@ -349,7 +349,8 @@ function Emprestimos() {
     setForm({
       pessoa_id: '',
       data_retirada: hojeISO(),
-      periodo_retirada_id: '',
+      // Campo interno exigido pelo backend legado; não aparece na tela.
+      periodo_retirada_id: String(periodos[0]?.id || ''),
       data_devolucao_prevista: '',
       periodo_devolucao_prevista_id: '',
       observacoes: '',
