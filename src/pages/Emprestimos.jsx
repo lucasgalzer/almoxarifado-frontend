@@ -110,6 +110,10 @@ function Emprestimos() {
   })
 
   const [codigoProduto, setCodigoProduto] = useState('')
+  const inputProdutoRef = useRef(null)
+  const [pessoaBusca, setPessoaBusca] = useState('')
+  const [pessoaDropdownAberto, setPessoaDropdownAberto] = useState(false)
+  const [pessoaIndiceAtivo, setPessoaIndiceAtivo] = useState(0)
   const [produtoSelecionado, setProdutoSelecionado] = useState(null)
   const [quantidadeProduto, setQuantidadeProduto] = useState(1)
   const [itensForm, setItensForm] = useState([])
@@ -221,11 +225,17 @@ function Emprestimos() {
           : produtosResponse.data?.dados || []
       )
 
-      setPeriodos(
-        Array.isArray(periodosResponse.data)
-          ? periodosResponse.data
-          : periodosResponse.data?.dados || []
-      )
+      const periodosCarregados = Array.isArray(periodosResponse.data)
+        ? periodosResponse.data
+        : periodosResponse.data?.dados || []
+      setPeriodos(periodosCarregados)
+      // O novo formulário não solicita data/período ao operador.
+      // Mantemos os metadados internos exigidos pelo modelo atual da API.
+      setForm(prev => ({
+        ...prev,
+        data_retirada: hojeISO(),
+        periodo_retirada_id: prev.periodo_retirada_id || String(periodosCarregados[0]?.id || ''),
+      }))
     } catch (error) {
       console.error(error)
 
@@ -280,6 +290,12 @@ function Emprestimos() {
       .sort((a, b) => a.label.localeCompare(b.label))
   }, [pessoas])
 
+  const pessoasFiltradas = useMemo(() => {
+    const termo = pessoaBusca.trim().toLocaleLowerCase('pt-BR')
+    if (!termo) return pessoasOptions.slice(0, 8)
+    return pessoasOptions.filter(pessoa => pessoa.label.toLocaleLowerCase('pt-BR').includes(termo)).slice(0, 8)
+  }, [pessoasOptions, pessoaBusca])
+
   const produtosFiltrados = useMemo(() => {
     const buscaNormalizada = codigoProduto.trim().toLowerCase()
 
@@ -333,13 +349,17 @@ function Emprestimos() {
     setForm({
       pessoa_id: '',
       data_retirada: hojeISO(),
-      periodo_retirada_id: '',
+      // Campo interno exigido pelo backend legado; não aparece na tela.
+      periodo_retirada_id: String(periodos[0]?.id || ''),
       data_devolucao_prevista: '',
       periodo_devolucao_prevista_id: '',
       observacoes: '',
     })
 
     setCodigoProduto('')
+    setPessoaBusca('')
+    setPessoaDropdownAberto(false)
+    setPessoaIndiceAtivo(0)
     setProdutoSelecionado(null)
     setQuantidadeProduto(1)
     setItensForm([])
@@ -364,6 +384,56 @@ function Emprestimos() {
     setQuantidadeProduto(1)
   }
 
+  function adicionarProdutoAoEmprestimo(produto, quantidadeInformada = 1) {
+    if (!produto) {
+      addToast('Produto não encontrado', 'erro')
+      return false
+    }
+    if (produto.status !== 'disponivel') {
+      addToast(`O produto está ${produto.status}`, 'erro')
+      return false
+    }
+    const tipoControle = produto.categoria_tipo_controle || produto.tipo_controle || 'quantidade'
+    const individual = tipoControle === 'individual'
+    const quantidade = individual ? 1 : Number(quantidadeInformada)
+    if (!Number.isInteger(quantidade) || quantidade <= 0) {
+      addToast('Informe uma quantidade válida', 'erro')
+      return false
+    }
+    if (!individual && Number(produto.quantidade_atual || 0) < quantidade) {
+      addToast(`Estoque insuficiente. Disponível: ${produto.quantidade_atual || 0}`, 'erro')
+      return false
+    }
+    const existente = itensForm.find(item => String(item.produto_id) === String(produto.id))
+    if (existente && individual) {
+      addToast('Este equipamento já foi adicionado', 'erro')
+      return false
+    }
+    if (existente) {
+      if (Number(existente.quantidade) + quantidade > Number(produto.quantidade_atual || 0)) {
+        addToast(`Estoque insuficiente. Disponível: ${produto.quantidade_atual || 0}`, 'erro')
+        return false
+      }
+      setItensForm(prev => prev.map(item => String(item.produto_id) === String(produto.id)
+        ? { ...item, quantidade: item.quantidade + quantidade }
+        : item))
+    } else {
+      setItensForm(prev => [...prev, {
+        produto_id: produto.id,
+        produto_nome: produto.nome,
+        codigo_interno: produto.codigo_interno,
+        quantidade,
+        individual,
+      }])
+    }
+    setProdutoSelecionado(null)
+    setCodigoProduto('')
+    setQuantidadeProduto(1)
+    requestAnimationFrame(() => inputProdutoRef.current?.focus())
+    tocarSom('sucesso')
+    return true
+  }
+
   function removerItemForm(produtoId) {
     setItensForm(prev =>
       prev.filter(item => item.produto_id !== produtoId)
@@ -375,78 +445,7 @@ function Emprestimos() {
       addToast('Selecione um produto primeiro', 'erro')
       return
     }
-
-    if (produtoSelecionado.status !== 'disponivel') {
-      addToast(
-        `O produto está ${produtoSelecionado.status}`,
-        'erro'
-      )
-      return
-    }
-
-    const tipoControle =
-      produtoSelecionado.categoria_tipo_controle ||
-      produtoSelecionado.tipo_controle ||
-      'quantidade'
-
-    const individual = tipoControle === 'individual'
-
-    const quantidade = individual
-      ? 1
-      : Number(quantidadeProduto)
-
-    if (!Number.isInteger(quantidade) || quantidade <= 0) {
-      addToast('Informe uma quantidade válida', 'erro')
-      return
-    }
-
-    if (
-      !individual &&
-      Number(produtoSelecionado.quantidade_atual || 0) < quantidade
-    ) {
-      addToast(
-        `Estoque insuficiente. Disponível: ${produtoSelecionado.quantidade_atual || 0}`,
-        'erro'
-      )
-      return
-    }
-
-    const existente = itensForm.find(
-      item => item.produto_id === produtoSelecionado.id
-    )
-
-    if (existente) {
-      if (individual) {
-        addToast('Este equipamento já foi adicionado', 'erro')
-        return
-      }
-
-      setItensForm(prev =>
-        prev.map(item =>
-          item.produto_id === produtoSelecionado.id
-            ? {
-                ...item,
-                quantidade: item.quantidade + quantidade,
-              }
-            : item
-        )
-      )
-    } else {
-      setItensForm(prev => [
-        ...prev,
-        {
-          produto_id: produtoSelecionado.id,
-          produto_nome: produtoSelecionado.nome,
-          codigo_interno: produtoSelecionado.codigo_interno,
-          quantidade,
-          individual,
-        },
-      ])
-    }
-
-    setProdutoSelecionado(null)
-    setCodigoProduto('')
-    setQuantidadeProduto(1)
+    adicionarProdutoAoEmprestimo(produtoSelecionado, quantidadeProduto)
   }
 
   async function buscarProdutoPorCodigo() {
@@ -455,17 +454,18 @@ function Emprestimos() {
     if (!codigo || buscandoProduto) return
 
     const encontrado = produtos.find(
-      produto =>
-        String(produto.codigo_interno || '').toLowerCase() ===
-        codigo.toLowerCase()
+      produto => String(produto.codigo_interno || '').trim().toLocaleLowerCase('pt-BR') === codigo.toLocaleLowerCase('pt-BR')
     )
 
     if (!encontrado) {
       addToast(`Produto "${codigo}" não encontrado`, 'erro')
+      setCodigoProduto('')
+      requestAnimationFrame(() => inputProdutoRef.current?.focus())
       return
     }
 
-    selecionarProduto(encontrado)
+    // O Enter do leitor adiciona diretamente o produto, sem etapa de busca/seleção.
+    adicionarProdutoAoEmprestimo(encontrado, 1)
   }
 
   async function salvarEmprestimo(event) {
@@ -478,45 +478,13 @@ function Emprestimos() {
       return
     }
 
-    if (!form.data_retirada) {
-      addToast('Informe a data da retirada', 'erro')
-      return
-    }
-
-    if (!form.periodo_retirada_id) {
-      addToast('Selecione o período da retirada', 'erro')
-      return
-    }
-
     if (itensForm.length === 0) {
       addToast('Adicione pelo menos um produto', 'erro')
       return
     }
 
-    if (!form.data_devolucao_prevista || !form.periodo_devolucao_prevista_id) {
-      addToast('Informe a data e o período previstos para devolução para verificar a disponibilidade.', 'erro')
-      return
-    }
-
-    if (form.data_devolucao_prevista < form.data_retirada) {
-      addToast('A devolução não pode ocorrer antes da retirada.', 'erro')
-      return
-    }
-
-    const ordemRetirada = periodos.find(p => String(p.id) === String(form.periodo_retirada_id))?.ordem
-    const ordemDevolucao = periodos.find(p => String(p.id) === String(form.periodo_devolucao_prevista_id))?.ordem
-    if (form.data_devolucao_prevista === form.data_retirada && Number(ordemDevolucao) <= Number(ordemRetirada)) {
-      addToast('O período de devolução deve ser posterior ao período de retirada.', 'erro')
-      return
-    }
-
-    if (verificandoDisponibilidade || !disponibilidade) {
-      addToast('Aguarde a verificação de disponibilidade antes de registrar.', 'erro')
-      return
-    }
-
-    if (!disponibilidade.disponivel) {
-      addToast(disponibilidade.erro || (disponibilidade.resultados || []).filter(item => !item.disponivel).map(item => item.detalhe || item.mensagem || item.produto).join(' ') || 'Há equipamentos indisponíveis no período selecionado.', 'erro')
+    if (!form.periodo_retirada_id) {
+      addToast('Não há períodos ativos configurados para registrar o empréstimo.', 'erro')
       return
     }
 
@@ -1315,176 +1283,10 @@ function Emprestimos() {
               onSubmit={salvarEmprestimo}
               className={styles.modalBody}
             >
-              <div className={styles.grid2}>
-                <label>
-                  Pessoa
-                  <select
-                    value={form.pessoa_id}
-                    onChange={event =>
-                      setForm(prev => ({
-                        ...prev,
-                        pessoa_id:
-                          event.target.value,
-                      }))
-                    }
-                    required
-                  >
-                    <option value="">
-                      Selecione uma pessoa
-                    </option>
-
-                    {pessoasOptions.map(
-                      pessoa => (
-                        <option
-                          key={pessoa.value}
-                          value={pessoa.value}
-                        >
-                          {pessoa.label}
-                        </option>
-                      )
-                    )}
-                  </select>
-                </label>
-
-                <label>
-                  Data da retirada
-                  <input
-                    type="date"
-                    value={form.data_retirada}
-                    onChange={event =>
-                      setForm(prev => ({
-                        ...prev,
-                        data_retirada:
-                          event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-              </div>
-
-              <div className={styles.grid2}>
-                <label>
-                  Período da retirada
-                  <select
-                    value={
-                      form.periodo_retirada_id
-                    }
-                    onChange={event =>
-                      setForm(prev => ({
-                        ...prev,
-                        periodo_retirada_id:
-                          event.target.value,
-                      }))
-                    }
-                    required
-                  >
-                    <option value="">
-                      Selecione o período
-                    </option>
-
-                    {periodos.map(periodo => (
-                      <option
-                        key={periodo.id}
-                        value={periodo.id}
-                      >
-                        {obterNomePeriodo(
-                          periodo
-                        )}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>
-                  Data prevista para devolução
-                  <input
-                    type="date"
-                    value={
-                      form.data_devolucao_prevista
-                    }
-                    min={form.data_retirada}
-                    onChange={event =>
-                      setForm(prev => ({
-                        ...prev,
-                        data_devolucao_prevista:
-                          event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-              </div>
-
-              <div className={styles.grid2}>
-                <label>
-                  Período previsto para devolução
-                  <select
-                    value={
-                      form.periodo_devolucao_prevista_id
-                    }
-                    onChange={event =>
-                      setForm(prev => ({
-                        ...prev,
-                        periodo_devolucao_prevista_id:
-                          event.target.value,
-                      }))
-                    }
-                    disabled={
-                      !form.data_devolucao_prevista
-                    }
-                  >
-                    <option value="">
-                      Selecione o período
-                    </option>
-
-                    {periodos.map(periodo => (
-                      <option
-                        key={periodo.id}
-                        value={periodo.id}
-                      >
-                        {obterNomePeriodo(
-                          periodo
-                        )}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <div />
-              </div>
-
-
-              {itensForm.length > 0 &&
-                form.data_retirada &&
-                form.periodo_retirada_id &&
-                form.data_devolucao_prevista &&
-                form.periodo_devolucao_prevista_id && (
-                  <div
-                    role="status"
-                    style={{
-                      margin: '12px 0',
-                      padding: '10px 12px',
-                      borderRadius: 8,
-                      border: `1px solid ${verificandoDisponibilidade ? '#93c5fd' : disponibilidade?.disponivel ? '#86efac' : '#fca5a5'}`,
-                      background: verificandoDisponibilidade ? '#eff6ff' : disponibilidade?.disponivel ? '#f0fdf4' : '#fef2f2',
-                      color: verificandoDisponibilidade ? '#1d4ed8' : disponibilidade?.disponivel ? '#166534' : '#991b1b',
-                      fontSize: 13
-                    }}
-                  >
-                    {verificandoDisponibilidade
-                      ? 'Verificando disponibilidade para todas as datas e períodos...'
-                      : disponibilidade?.erro
-                        ? disponibilidade.erro
-                        : disponibilidade?.disponivel
-                          ? 'Disponibilidade confirmada para o período selecionado.'
-                          : disponibilidade
-                            ? (disponibilidade.resultados || [])
-                                .filter(item => !item.disponivel)
-                                .map(item => `${item.produto || item.codigo_interno || 'Produto'}: ${item.detalhe || item.mensagem || 'indisponível no período'}`)
-                                .join(' ')
-                            : 'Aguardando verificação de disponibilidade...'}
-                  </div>
-                )}
+              {/* Datas e períodos não são solicitados no novo fluxo. A API ainda recebe metadados internos. */}
+              {itensForm.length > 0 && verificandoDisponibilidade && (
+                <div role="status" className={styles.avisoDisponibilidade}>Verificando disponibilidade dos produtos...</div>
+              )}
 
               <div className={styles.secaoProduto}>
                 <div className={styles.secaoTitulo}>
@@ -1503,35 +1305,26 @@ function Emprestimos() {
                   }
                 >
                   <input
+                    ref={inputProdutoRef}
                     value={codigoProduto}
-                    onChange={event =>
-                      setCodigoProduto(
-                        event.target.value
-                      )
-                    }
+                    onChange={event => setCodigoProduto(event.target.value)}
                     onKeyDown={event => {
-                      if (
-                        event.key === 'Enter'
-                      ) {
+                      if (event.key === 'Enter') {
                         event.preventDefault()
                         buscarProdutoPorCodigo()
                       }
                     }}
-                    placeholder="Código do produto..."
+                    placeholder="Leia o código de barras ou digite o nome/código..."
                     disabled={buscandoProduto}
+                    autoComplete="off"
                   />
 
                   <button
                     type="button"
-                    onClick={
-                      buscarProdutoPorCodigo
-                    }
-                    disabled={
-                      buscandoProduto ||
-                      !codigoProduto.trim()
-                    }
+                    onClick={buscarProdutoPorCodigo}
+                    disabled={buscandoProduto || !codigoProduto.trim()}
                   >
-                    Buscar
+                    Adicionar pelo código
                   </button>
                 </div>
 
