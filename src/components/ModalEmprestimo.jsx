@@ -11,6 +11,8 @@ function ModalEmprestimo({ onFechar, onSalvar }) {
 
   const [pessoas, setPessoas] = useState([])
   const [periodos, setPeriodos] = useState([])
+  const [produtosDisponiveis, setProdutosDisponiveis] = useState([])
+  const [mostrarSugestoes, setMostrarSugestoes] = useState(false)
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState('')
   const [buscandoProduto, setBuscandoProduto] = useState(false)
@@ -31,6 +33,12 @@ function ModalEmprestimo({ onFechar, onSalvar }) {
 
   const codigoRef = useRef(null)
 
+  const termoProduto = form.codigo_interno.trim().toLocaleLowerCase('pt-BR')
+  const sugestoesProdutos = termoProduto.length < 1 ? [] : produtosDisponiveis.filter(produto =>
+    [produto.nome, produto.codigo_interno, produto.codigo_barras, produto.codigo_barra]
+      .some(campo => String(campo || '').toLocaleLowerCase('pt-BR').includes(termoProduto))
+  ).slice(0, 8)
+
   const opcoesPessoas = pessoas.map(p => ({
     value: p.id,
     label: `${p.nome_completo}${p.setor ? ` — ${p.setor}` : ''}`,
@@ -40,6 +48,10 @@ function ModalEmprestimo({ onFechar, onSalvar }) {
     api.get('/pessoas', { params: { ativo: true } })
       .then(({ data }) => setPessoas(data))
       .catch(console.error)
+
+    api.get('/produtos', { params: { por_pagina: 'todos' } })
+      .then(({ data }) => setProdutosDisponiveis(Array.isArray(data) ? data : (data.dados || [])))
+      .catch(error => console.error('Erro ao carregar produtos:', error))
 
     api.get('/emprestimos/periodos')
       .then(({ data }) => setPeriodos(data))
@@ -61,6 +73,7 @@ function ModalEmprestimo({ onFechar, onSalvar }) {
 
     if (name === 'codigo_interno') {
       setErro('')
+      setMostrarSugestoes(Boolean(value.trim()))
     }
   }
 
@@ -122,90 +135,59 @@ function ModalEmprestimo({ onFechar, onSalvar }) {
   ])
 
 
-  async function handleBuscarProduto() {
-    const codigo = form.codigo_interno.trim()
-
-    if (!codigo || buscandoProduto) return
-
-    setBuscandoProduto(true)
+  function adicionarProduto(produto) {
     setErro('')
-
-    try {
-      const { data } = await api.get('/produtos', {
-        params: { por_pagina: 'todos' }
-      })
-
-      const produto = data.dados.find(p =>
-        p.codigo_interno?.toLowerCase() === codigo.toLowerCase()
-      )
-      
-
-      if (!produto) {
-        setErro(`Produto "${codigo}" não encontrado`)
-        return
-      }
-
-      if (produto.tipo !== 'reutilizavel') {
-        setErro(`"${produto.nome}" é consumível e não pode ser emprestado`)
-        return
-      }
-
-      if (produto.status !== 'disponivel') {
-        setErro(`"${produto.nome}" está ${produto.status}`)
-        return
-      }
-if (produto.quantidade_atual <= 0) {
-  setErro(`"${produto.nome}" não tem estoque disponível`)
-  tocarSom('erro')
-  return
-}
-
-if (
-  produto.tipo_controle === 'individual' &&
-  produto.status !== 'disponivel'
-) {
-  setErro(`"${produto.nome}" está ${produto.status}`)
-  tocarSom('erro')
-  return
-}
-
-      const jaAdicionado = produtosSelecionados.some(
-        p => p.id === produto.id
-      )
-
-      if (jaAdicionado) {
-        setErro(`"${produto.nome}" (${produto.codigo_interno}) já foi adicionado`)
-        tocarSom('erro')
-        return
-      }
-
-      setProdutosSelecionados(prev => [
-        ...prev,
-        produto
-      ])
-
-      // Somente toca quando o equipamento foi realmente adicionado
-      tocarSom('emprestimo')
-
-      // Limpa o campo para o próximo código
-      setForm(prev => ({
-        ...prev,
-        codigo_interno: ''
-      }))
-
-      // Mantém o leitor/campo pronto para o próximo equipamento
-      setTimeout(() => {
-        codigoRef.current?.focus()
-      }, 50)
-
-    } catch (error) {
-      console.error(error)
-      setErro('Erro ao buscar produto')
-    } finally {
-      setBuscandoProduto(false)
+    if (!produto) { setErro('Produto não encontrado'); tocarSom('erro'); return }
+    if (produto.tipo === 'consumivel') {
+      setErro(`"${produto.nome}" é consumível e não pode ser emprestado`)
+      tocarSom('erro')
+      return
     }
+    if (produto.tipo_controle === 'individual' && produto.status !== 'disponivel') {
+      setErro(`"${produto.nome}" está ${produto.status}`)
+      tocarSom('erro')
+      return
+    }
+    if (Number(produto.quantidade_atual) <= 0) {
+      setErro(`"${produto.nome}" não tem estoque disponível`)
+      tocarSom('erro')
+      return
+    }
+    if (produtosSelecionados.some(p => String(p.id) === String(produto.id))) {
+      setErro(`"${produto.nome}" já foi adicionado`)
+      tocarSom('erro')
+      return
+    }
+    setProdutosSelecionados(prev => [...prev, produto])
+    tocarSom('emprestimo')
+    setForm(prev => ({ ...prev, codigo_interno: '' }))
+    setMostrarSugestoes(false)
+    setTimeout(() => codigoRef.current?.focus(), 50)
   }
 
+  async function handleBuscarProduto(produtoEscolhido = null) {
+    if (produtoEscolhido) { adicionarProduto(produtoEscolhido); return }
+    const codigo = form.codigo_interno.trim()
+    if (!codigo || buscandoProduto) return
+    setBuscandoProduto(true)
+    setErro('')
+    try {
+      const { data } = await api.get('/produtos', { params: { por_pagina: 'todos' } })
+      const produtos = Array.isArray(data) ? data : (data.dados || [])
+      setProdutosDisponiveis(produtos)
+      const termo = codigo.toLocaleLowerCase('pt-BR')
+      const produto = produtos.find(p => [p.codigo_interno, p.codigo_barras, p.codigo_barra].some(v => String(v || '').toLocaleLowerCase('pt-BR') === termo))
+        || produtos.find(p => String(p.nome || '').toLocaleLowerCase('pt-BR') === termo)
+        || produtos.find(p => String(p.nome || '').toLocaleLowerCase('pt-BR').includes(termo))
+      if (!produto) { setErro(`Nenhum produto encontrado para "${codigo}"`); tocarSom('erro'); return }
+      adicionarProduto(produto)
+    } catch (error) {
+      console.error(error)
+      const msg = error.response?.data?.erro || 'Erro ao buscar produtos no estoque'
+      setErro(msg)
+      tocarSom('erro')
+    } finally { setBuscandoProduto(false) }
+  }
   function removerProduto(id) {
     setProdutosSelecionados(prev =>
       prev.filter(produto => produto.id !== id)
@@ -374,25 +356,34 @@ if (
                 gap: '8px',
               }}
             >
-              <input
-                ref={codigoRef}
-                name="codigo_interno"
-                value={form.codigo_interno}
-                onChange={handleChange}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    handleBuscarProduto()
-                  }
-                }}
-                placeholder="Digite ou escaneie o código..."
-                disabled={buscandoProduto}
-                autoComplete="off"
-                style={{
-                  flex: 1,
-                  fontSize: '14px',
-                }}
-              />
+              <div style={{ flex: 1, position: 'relative' }}>
+                <input
+                  ref={codigoRef}
+                  name="codigo_interno"
+                  value={form.codigo_interno}
+                  onChange={handleChange}
+                  onFocus={() => setMostrarSugestoes(Boolean(form.codigo_interno.trim()))}
+                  onBlur={() => setTimeout(() => setMostrarSugestoes(false), 160)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') { e.preventDefault(); handleBuscarProduto() }
+                    if (e.key === 'Escape') setMostrarSugestoes(false)
+                  }}
+                  placeholder="Pesquise por nome, código interno ou código de barras..."
+                  disabled={buscandoProduto}
+                  autoComplete="off"
+                  style={{ width: '100%', boxSizing: 'border-box', fontSize: '14px' }}
+                />
+                {mostrarSugestoes && sugestoesProdutos.length > 0 && (
+                  <div role="listbox" style={{ position: 'absolute', zIndex: 20, top: '100%', left: 0, right: 0, maxHeight: 260, overflowY: 'auto', background: '#fff', border: '1px solid var(--color-border)', borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,.12)' }}>
+                    {sugestoesProdutos.map(produto => (
+                      <button key={produto.id} type="button" role="option" onMouseDown={e => e.preventDefault()} onClick={() => handleBuscarProduto(produto)} style={{ display: 'block', width: '100%', padding: '10px 12px', textAlign: 'left', border: 'none', borderBottom: '1px solid #f1f5f9', background: '#fff', cursor: 'pointer' }}>
+                        <strong style={{ display: 'block', color: '#111827', fontSize: 13 }}>{produto.nome}</strong>
+                        <span style={{ display: 'block', color: '#64748b', fontSize: 11, marginTop: 3 }}>Código: {produto.codigo_interno || produto.codigo_barras || produto.codigo_barra || 'não informado'} · Estoque: {produto.quantidade_atual ?? '—'}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <button
                 type="button"
