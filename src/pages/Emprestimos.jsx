@@ -25,31 +25,6 @@ function formatarData(data) {
   return `${dia}/${mes}/${ano}`
 }
 
-function hojeISO() {
-  const hoje = new Date()
-  const ano = hoje.getFullYear()
-  const mes = String(hoje.getMonth() + 1).padStart(2, '0')
-  const dia = String(hoje.getDate()).padStart(2, '0')
-
-  return `${ano}-${mes}-${dia}`
-}
-
-function obterNomePeriodo(periodo) {
-  if (!periodo) return '—'
-
-  if (periodo.nome && periodo.horario) {
-    return `${periodo.nome} — ${String(periodo.horario).slice(0, 5)}`
-  }
-
-  if (periodo.nome) return periodo.nome
-
-  if (periodo.horario) {
-    return String(periodo.horario).slice(0, 5)
-  }
-
-  return '—'
-}
-
 function obterStatusLabel(status) {
   const mapa = {
     ativo: 'Em aberto',
@@ -80,7 +55,6 @@ function Emprestimos() {
   const [emprestimos, setEmprestimos] = useState([])
   const [pessoas, setPessoas] = useState([])
   const [produtos, setProdutos] = useState([])
-  const [periodos, setPeriodos] = useState([])
 
   const [carregando, setCarregando] = useState(true)
   const [carregandoDados, setCarregandoDados] = useState(false)
@@ -102,13 +76,10 @@ function Emprestimos() {
 
   const [form, setForm] = useState({
     pessoa_id: '',
-    data_retirada: hojeISO(),
-    periodo_retirada_id: '',
-    data_devolucao_prevista: '',
-    periodo_devolucao_prevista_id: '',
     observacoes: '',
   })
 
+  const [buscaPessoa, setBuscaPessoa] = useState('')
   const [codigoProduto, setCodigoProduto] = useState('')
   const [produtoSelecionado, setProdutoSelecionado] = useState(null)
   const [quantidadeProduto, setQuantidadeProduto] = useState(1)
@@ -133,66 +104,11 @@ function Emprestimos() {
     carregarEmprestimos()
   }, [filtroStatus, filtroPessoa])
 
-  useEffect(() => {
-    const periodoCompleto =
-      form.data_retirada &&
-      form.periodo_retirada_id &&
-      form.data_devolucao_prevista &&
-      form.periodo_devolucao_prevista_id
-
-    if (!modalNovo || !itensForm.length || !periodoCompleto) {
-      setDisponibilidade(null)
-      setVerificandoDisponibilidade(false)
-      return
-    }
-
-    let ativo = true
-    const timer = setTimeout(async () => {
-      setVerificandoDisponibilidade(true)
-      setDisponibilidade(null)
-
-      try {
-        const { data } = await api.post('/emprestimos/disponibilidade', {
-          itens: itensForm.map(item => ({
-            produto_id: item.produto_id,
-            quantidade: item.quantidade
-          })),
-          data_retirada: form.data_retirada,
-          periodo_retirada_id: form.periodo_retirada_id,
-          data_devolucao_prevista: form.data_devolucao_prevista,
-          periodo_devolucao_prevista_id: form.periodo_devolucao_prevista_id
-        })
-        if (ativo) setDisponibilidade(data)
-      } catch (error) {
-        if (ativo) {
-          setDisponibilidade({
-            disponivel: false,
-            erro: error.response?.data?.erro || 'Não foi possível verificar a disponibilidade.'
-          })
-        }
-      } finally {
-        if (ativo) setVerificandoDisponibilidade(false)
-      }
-    }, 250)
-
-    return () => {
-      ativo = false
-      clearTimeout(timer)
-    }
-  }, [
-    modalNovo,
-    itensForm,
-    form.data_retirada,
-    form.periodo_retirada_id,
-    form.data_devolucao_prevista,
-    form.periodo_devolucao_prevista_id
-  ])
-
   async function carregarDadosIniciais() {
     try {
       setCarregandoDados(true)
 
-      const [pessoasResponse, produtosResponse, periodosResponse] =
+      const [pessoasResponse, produtosResponse] =
         await Promise.all([
           api.get('/pessoas', {
             params: {
@@ -205,8 +121,6 @@ function Emprestimos() {
               por_pagina: 'todos',
             },
           }),
-
-          api.get('/periodos-aula'),
         ])
 
       setPessoas(
@@ -221,11 +135,6 @@ function Emprestimos() {
           : produtosResponse.data?.dados || []
       )
 
-      setPeriodos(
-        Array.isArray(periodosResponse.data)
-          ? periodosResponse.data
-          : periodosResponse.data?.dados || []
-      )
     } catch (error) {
       console.error(error)
 
@@ -288,10 +197,12 @@ function Emprestimos() {
     return produtos
       .filter(produto => {
         const codigo = String(produto.codigo_interno || '').toLowerCase()
+        const codigoBarras = String(produto.codigo_barras || produto.codigo_barra || '').toLowerCase()
         const nome = String(produto.nome || '').toLowerCase()
 
         return (
           codigo.includes(buscaNormalizada) ||
+          codigoBarras.includes(buscaNormalizada) ||
           nome.includes(buscaNormalizada)
         )
       })
@@ -339,6 +250,7 @@ function Emprestimos() {
       observacoes: '',
     })
 
+    setBuscaPessoa('')
     setCodigoProduto('')
     setProdutoSelecionado(null)
     setQuantidadeProduto(1)
@@ -456,8 +368,11 @@ function Emprestimos() {
 
     const encontrado = produtos.find(
       produto =>
-        String(produto.codigo_interno || '').toLowerCase() ===
-        codigo.toLowerCase()
+        [
+          produto.codigo_interno,
+          produto.codigo_barras,
+          produto.codigo_barra,
+        ].some(valor => String(valor || '').toLowerCase() === codigo.toLowerCase())
     )
 
     if (!encontrado) {
@@ -478,45 +393,8 @@ function Emprestimos() {
       return
     }
 
-    if (!form.data_retirada) {
-      addToast('Informe a data da retirada', 'erro')
-      return
-    }
-
-    if (!form.periodo_retirada_id) {
-      addToast('Selecione o período da retirada', 'erro')
-      return
-    }
-
     if (itensForm.length === 0) {
       addToast('Adicione pelo menos um produto', 'erro')
-      return
-    }
-
-    if (!form.data_devolucao_prevista || !form.periodo_devolucao_prevista_id) {
-      addToast('Informe a data e o período previstos para devolução para verificar a disponibilidade.', 'erro')
-      return
-    }
-
-    if (form.data_devolucao_prevista < form.data_retirada) {
-      addToast('A devolução não pode ocorrer antes da retirada.', 'erro')
-      return
-    }
-
-    const ordemRetirada = periodos.find(p => String(p.id) === String(form.periodo_retirada_id))?.ordem
-    const ordemDevolucao = periodos.find(p => String(p.id) === String(form.periodo_devolucao_prevista_id))?.ordem
-    if (form.data_devolucao_prevista === form.data_retirada && Number(ordemDevolucao) <= Number(ordemRetirada)) {
-      addToast('O período de devolução deve ser posterior ao período de retirada.', 'erro')
-      return
-    }
-
-    if (verificandoDisponibilidade || !disponibilidade) {
-      addToast('Aguarde a verificação de disponibilidade antes de registrar.', 'erro')
-      return
-    }
-
-    if (!disponibilidade.disponivel) {
-      addToast(disponibilidade.erro || (disponibilidade.resultados || []).filter(item => !item.disponivel).map(item => item.detalhe || item.mensagem || item.produto).join(' ') || 'Há equipamentos indisponíveis no período selecionado.', 'erro')
       return
     }
 
@@ -525,12 +403,6 @@ function Emprestimos() {
     try {
       const payload = {
         pessoa_id: form.pessoa_id,
-        data_retirada: form.data_retirada,
-        periodo_retirada_id: form.periodo_retirada_id,
-        data_devolucao_prevista:
-          form.data_devolucao_prevista || null,
-        periodo_devolucao_prevista_id:
-          form.periodo_devolucao_prevista_id || null,
         observacoes: form.observacoes || null,
 
         itens: itensForm.map(item => ({
@@ -1315,176 +1187,30 @@ function Emprestimos() {
               onSubmit={salvarEmprestimo}
               className={styles.modalBody}
             >
-              <div className={styles.grid2}>
-                <label>
-                  Pessoa
-                  <select
-                    value={form.pessoa_id}
-                    onChange={event =>
-                      setForm(prev => ({
-                        ...prev,
-                        pessoa_id:
-                          event.target.value,
-                      }))
-                    }
-                    required
-                  >
-                    <option value="">
-                      Selecione uma pessoa
-                    </option>
-
-                    {pessoasOptions.map(
-                      pessoa => (
-                        <option
-                          key={pessoa.value}
-                          value={pessoa.value}
-                        >
-                          {pessoa.label}
-                        </option>
-                      )
-                    )}
-                  </select>
-                </label>
-
-                <label>
-                  Data da retirada
-                  <input
-                    type="date"
-                    value={form.data_retirada}
-                    onChange={event =>
-                      setForm(prev => ({
-                        ...prev,
-                        data_retirada:
-                          event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-              </div>
-
-              <div className={styles.grid2}>
-                <label>
-                  Período da retirada
-                  <select
-                    value={
-                      form.periodo_retirada_id
-                    }
-                    onChange={event =>
-                      setForm(prev => ({
-                        ...prev,
-                        periodo_retirada_id:
-                          event.target.value,
-                      }))
-                    }
-                    required
-                  >
-                    <option value="">
-                      Selecione o período
-                    </option>
-
-                    {periodos.map(periodo => (
-                      <option
-                        key={periodo.id}
-                        value={periodo.id}
-                      >
-                        {obterNomePeriodo(
-                          periodo
-                        )}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>
-                  Data prevista para devolução
-                  <input
-                    type="date"
-                    value={
-                      form.data_devolucao_prevista
-                    }
-                    min={form.data_retirada}
-                    onChange={event =>
-                      setForm(prev => ({
-                        ...prev,
-                        data_devolucao_prevista:
-                          event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-              </div>
-
-              <div className={styles.grid2}>
-                <label>
-                  Período previsto para devolução
-                  <select
-                    value={
-                      form.periodo_devolucao_prevista_id
-                    }
-                    onChange={event =>
-                      setForm(prev => ({
-                        ...prev,
-                        periodo_devolucao_prevista_id:
-                          event.target.value,
-                      }))
-                    }
-                    disabled={
-                      !form.data_devolucao_prevista
-                    }
-                  >
-                    <option value="">
-                      Selecione o período
-                    </option>
-
-                    {periodos.map(periodo => (
-                      <option
-                        key={periodo.id}
-                        value={periodo.id}
-                      >
-                        {obterNomePeriodo(
-                          periodo
-                        )}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <div />
-              </div>
-
-
-              {itensForm.length > 0 &&
-                form.data_retirada &&
-                form.periodo_retirada_id &&
-                form.data_devolucao_prevista &&
-                form.periodo_devolucao_prevista_id && (
-                  <div
-                    role="status"
-                    style={{
-                      margin: '12px 0',
-                      padding: '10px 12px',
-                      borderRadius: 8,
-                      border: `1px solid ${verificandoDisponibilidade ? '#93c5fd' : disponibilidade?.disponivel ? '#86efac' : '#fca5a5'}`,
-                      background: verificandoDisponibilidade ? '#eff6ff' : disponibilidade?.disponivel ? '#f0fdf4' : '#fef2f2',
-                      color: verificandoDisponibilidade ? '#1d4ed8' : disponibilidade?.disponivel ? '#166534' : '#991b1b',
-                      fontSize: 13
-                    }}
-                  >
-                    {verificandoDisponibilidade
-                      ? 'Verificando disponibilidade para todas as datas e períodos...'
-                      : disponibilidade?.erro
-                        ? disponibilidade.erro
-                        : disponibilidade?.disponivel
-                          ? 'Disponibilidade confirmada para o período selecionado.'
-                          : disponibilidade
-                            ? (disponibilidade.resultados || [])
-                                .filter(item => !item.disponivel)
-                                .map(item => `${item.produto || item.codigo_interno || 'Produto'}: ${item.detalhe || item.mensagem || 'indisponível no período'}`)
-                                .join(' ')
-                            : 'Aguardando verificação de disponibilidade...'}
-                  </div>
-                )}
+              <label className={styles.campoPessoa}>
+                Pessoa
+                <input
+                  type="text"
+                  list="pessoas-emprestimo-opcoes"
+                  value={buscaPessoa || pessoasOptions.find(pessoa => String(pessoa.value) === String(form.pessoa_id))?.label || ''}
+                  onChange={event => {
+                    const valor = event.target.value
+                    setBuscaPessoa(valor)
+                    const pessoa = pessoasOptions.find(
+                      item => item.label.toLowerCase() === valor.trim().toLowerCase()
+                    )
+                    setForm(prev => ({ ...prev, pessoa_id: pessoa ? String(pessoa.value) : '' }))
+                  }}
+                  placeholder="Pesquise pelo nome da pessoa..."
+                  autoComplete="off"
+                  required
+                />
+                <datalist id="pessoas-emprestimo-opcoes">
+                  {pessoasOptions.map(pessoa => (
+                    <option key={pessoa.value} value={pessoa.label} />
+                  ))}
+                </datalist>
+              </label>
 
               <div className={styles.secaoProduto}>
                 <div className={styles.secaoTitulo}>
@@ -1493,7 +1219,7 @@ function Emprestimos() {
                   </strong>
 
                   <span>
-                    Use o código interno ou nome.
+                    Pesquise pelo nome, código interno ou código de barras.
                   </span>
                 </div>
 
@@ -1517,7 +1243,7 @@ function Emprestimos() {
                         buscarProdutoPorCodigo()
                       }
                     }}
-                    placeholder="Código do produto..."
+                    placeholder="Nome, código interno ou código de barras..."
                     disabled={buscandoProduto}
                   />
 
@@ -1584,7 +1310,7 @@ function Emprestimos() {
                       <span>
                         Código:{' '}
                         {
-                          produtoSelecionado.codigo_interno
+                          produtoSelecionado.codigo_interno || produtoSelecionado.codigo_barras || produtoSelecionado.codigo_barra || '—'
                         }
                       </span>
 
