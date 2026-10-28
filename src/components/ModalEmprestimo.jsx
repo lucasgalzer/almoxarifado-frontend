@@ -10,24 +10,17 @@ function ModalEmprestimo({ onFechar, onSalvar }) {
   const { addToast } = useToast()
 
   const [pessoas, setPessoas] = useState([])
-  const [periodos, setPeriodos] = useState([])
   const [produtosDisponiveis, setProdutosDisponiveis] = useState([])
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false)
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState('')
   const [buscandoProduto, setBuscandoProduto] = useState(false)
-  const [verificandoDisponibilidade, setVerificandoDisponibilidade] = useState(false)
-  const [disponibilidade, setDisponibilidade] = useState(null)
 
   const [produtosSelecionados, setProdutosSelecionados] = useState([])
 
   const [form, setForm] = useState({
     codigo_interno: '',
     pessoa_id: '',
-    data_retirada: '',
-    periodo_retirada_id: '',
-    data_devolucao_prevista: '',
-    periodo_devolucao_prevista_id: '',
     observacoes: '',
   })
 
@@ -53,13 +46,6 @@ function ModalEmprestimo({ onFechar, onSalvar }) {
       .then(({ data }) => setProdutosDisponiveis(Array.isArray(data) ? data : (data.dados || [])))
       .catch(error => console.error('Erro ao carregar produtos:', error))
 
-    api.get('/emprestimos/periodos')
-      .then(({ data }) => setPeriodos(data))
-      .catch(error => {
-        console.error(error)
-        setErro('Não foi possível carregar os períodos de aula')
-      })
-
     setTimeout(() => codigoRef.current?.focus(), 100)
   }, [])
 
@@ -76,64 +62,6 @@ function ModalEmprestimo({ onFechar, onSalvar }) {
       setMostrarSugestoes(Boolean(value.trim()))
     }
   }
-
-  // Consulta a disponibilidade assim que os equipamentos e o período
-  // estiverem preenchidos. O backend também valida novamente ao registrar.
-  useEffect(() => {
-    const datasPreenchidas =
-      form.data_retirada &&
-      form.periodo_retirada_id &&
-      form.data_devolucao_prevista &&
-      form.periodo_devolucao_prevista_id
-
-    if (!produtosSelecionados.length || !datasPreenchidas) {
-      setDisponibilidade(null)
-      setVerificandoDisponibilidade(false)
-      return
-    }
-
-    let ativo = true
-    const timer = setTimeout(async () => {
-      setVerificandoDisponibilidade(true)
-      setDisponibilidade(null)
-
-      try {
-        const { data } = await api.post('/emprestimos/disponibilidade', {
-          itens: produtosSelecionados.map(produto => ({
-            produto_id: produto.id,
-            quantidade: 1
-          })),
-          data_retirada: form.data_retirada,
-          periodo_retirada_id: form.periodo_retirada_id,
-          data_devolucao_prevista: form.data_devolucao_prevista,
-          periodo_devolucao_prevista_id: form.periodo_devolucao_prevista_id
-        })
-
-        if (ativo) setDisponibilidade(data)
-      } catch (error) {
-        if (ativo) {
-          setDisponibilidade({
-            disponivel: false,
-            erro: error.response?.data?.erro || 'Não foi possível verificar a disponibilidade.'
-          })
-        }
-      } finally {
-        if (ativo) setVerificandoDisponibilidade(false)
-      }
-    }, 350)
-
-    return () => {
-      ativo = false
-      clearTimeout(timer)
-    }
-  }, [
-    produtosSelecionados,
-    form.data_retirada,
-    form.periodo_retirada_id,
-    form.data_devolucao_prevista,
-    form.periodo_devolucao_prevista_id
-  ])
-
 
   function adicionarProduto(produto) {
     setErro('')
@@ -220,39 +148,11 @@ function ModalEmprestimo({ onFechar, onSalvar }) {
       return setErro('Selecione uma pessoa')
     }
 
-    if (!form.data_retirada || !form.periodo_retirada_id) {
-      return setErro('Informe a data e o período da retirada')
-    }
-
-    if (!form.data_devolucao_prevista || !form.periodo_devolucao_prevista_id) {
-      return setErro('Informe a data e o período previstos para a devolução')
-    }
-
-    if (form.data_devolucao_prevista < form.data_retirada) {
-      return setErro('A devolução não pode ocorrer antes da retirada')
-    }
-
-    if (disponibilidade && disponibilidade.disponivel === false) {
-      return setErro(disponibilidade.erro || 'Um ou mais equipamentos não estão disponíveis em todo o período selecionado. Ajuste as datas ou os equipamentos.')
-    }
-
-    if (
-      form.data_devolucao_prevista === form.data_retirada &&
-      Number(periodos.find(p => String(p.id) === String(form.periodo_devolucao_prevista_id))?.ordem) <=
-        Number(periodos.find(p => String(p.id) === String(form.periodo_retirada_id))?.ordem)
-    ) {
-      return setErro('O período de devolução deve ser posterior ao período de retirada')
-    }
-
     setCarregando(true)
 
     try {
       await api.post('/emprestimos', {
         pessoa_id: form.pessoa_id,
-        data_retirada: form.data_retirada,
-        periodo_retirada_id: form.periodo_retirada_id,
-        data_devolucao_prevista: form.data_devolucao_prevista,
-        periodo_devolucao_prevista_id: form.periodo_devolucao_prevista_id,
         observacoes: form.observacoes,
         origem: 'direto',
         itens: produtosSelecionados.map(produto => ({
@@ -600,108 +500,6 @@ function ModalEmprestimo({ onFechar, onSalvar }) {
             )}
 
           </div>
-
-          {/* PERÍODO DO EMPRÉSTIMO */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-              gap: '12px',
-              padding: '14px',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-md)',
-            }}
-          >
-            <div className={styles.campo}>
-              <label>Data da retirada *</label>
-              <input
-                type="date"
-                name="data_retirada"
-                value={form.data_retirada}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className={styles.campo}>
-              <label>Período da retirada *</label>
-              <select
-                name="periodo_retirada_id"
-                value={form.periodo_retirada_id}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Selecione o período</option>
-                {periodos.map(periodo => (
-                  <option key={periodo.id} value={periodo.id}>
-                    {periodo.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className={styles.campo}>
-              <label>Data prevista da devolução *</label>
-              <input
-                type="date"
-                name="data_devolucao_prevista"
-                min={form.data_retirada || undefined}
-                value={form.data_devolucao_prevista}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className={styles.campo}>
-              <label>Período previsto da devolução *</label>
-              <select
-                name="periodo_devolucao_prevista_id"
-                value={form.periodo_devolucao_prevista_id}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Selecione o período</option>
-                {periodos.map(periodo => (
-                  <option key={periodo.id} value={periodo.id}>
-                    {periodo.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-
-          {/* RETORNO DA VERIFICAÇÃO DE DISPONIBILIDADE */}
-          {produtosSelecionados.length > 0 &&
-            form.data_retirada &&
-            form.periodo_retirada_id &&
-            form.data_devolucao_prevista &&
-            form.periodo_devolucao_prevista_id && (
-              <div
-                role="status"
-                style={{
-                  padding: '10px 12px',
-                  borderRadius: 8,
-                  border: `1px solid ${verificandoDisponibilidade ? '#93c5fd' : disponibilidade?.disponivel ? '#86efac' : '#fca5a5'}`,
-                  background: verificandoDisponibilidade ? '#eff6ff' : disponibilidade?.disponivel ? '#f0fdf4' : '#fef2f2',
-                  color: verificandoDisponibilidade ? '#1d4ed8' : disponibilidade?.disponivel ? '#166534' : '#991b1b',
-                  fontSize: 13
-                }}
-              >
-                {verificandoDisponibilidade
-                  ? 'Verificando disponibilidade dos equipamentos para todo o período...'
-                  : disponibilidade?.erro
-                    ? disponibilidade.erro
-                    : disponibilidade?.disponivel
-                      ? 'Disponibilidade confirmada para todas as datas e períodos selecionados.'
-                      : disponibilidade
-                        ? (disponibilidade.resultados || [])
-                            .filter(item => !item.disponivel)
-                            .map(item => `${item.produto || item.codigo_interno}: ${item.detalhe || item.mensagem}`)
-                            .join(' ')
-                        : 'Aguardando verificação de disponibilidade...'}
-              </div>
-            )}
 
           {/* OBSERVAÇÕES */}
           <div className={styles.campo}>
