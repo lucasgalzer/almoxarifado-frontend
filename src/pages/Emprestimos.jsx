@@ -265,9 +265,7 @@ function Emprestimos() {
   }
 
   function selecionarProduto(produto) {
-    setProdutoSelecionado(produto)
-    setCodigoProduto(produto.codigo_interno || '')
-    setQuantidadeProduto(1)
+    adicionarProduto(produto, 1)
   }
 
   function removerItemForm(produtoId) {
@@ -276,30 +274,32 @@ function Emprestimos() {
     )
   }
 
-  function adicionarProduto() {
-    if (!produtoSelecionado) {
+  function adicionarProduto(produtoDireto = null, quantidadeDireta = null) {
+    const produto = produtoDireto || produtoSelecionado
+
+    if (!produto) {
       addToast('Selecione um produto primeiro', 'erro')
       return
     }
 
-    if (produtoSelecionado.status !== 'disponivel') {
+    if (produto.status !== 'disponivel') {
       addToast(
-        `O produto está ${produtoSelecionado.status}`,
+        `O produto está ${produto.status}`,
         'erro'
       )
       return
     }
 
     const tipoControle =
-      produtoSelecionado.categoria_tipo_controle ||
-      produtoSelecionado.tipo_controle ||
+      produto.categoria_tipo_controle ||
+      produto.tipo_controle ||
       'quantidade'
 
     const individual = tipoControle === 'individual'
 
     const quantidade = individual
       ? 1
-      : Number(quantidadeProduto)
+      : Number(quantidadeDireta ?? quantidadeProduto)
 
     if (!Number.isInteger(quantidade) || quantidade <= 0) {
       addToast('Informe uma quantidade válida', 'erro')
@@ -308,17 +308,17 @@ function Emprestimos() {
 
     if (
       !individual &&
-      Number(produtoSelecionado.quantidade_atual || 0) < quantidade
+      Number(produto.quantidade_atual || 0) < quantidade
     ) {
       addToast(
-        `Estoque insuficiente. Disponível: ${produtoSelecionado.quantidade_atual || 0}`,
+        `Estoque insuficiente. Disponível: ${produto.quantidade_atual || 0}`,
         'erro'
       )
       return
     }
 
     const existente = itensForm.find(
-      item => item.produto_id === produtoSelecionado.id
+      item => item.produto_id === produto.id
     )
 
     if (existente) {
@@ -329,7 +329,7 @@ function Emprestimos() {
 
       setItensForm(prev =>
         prev.map(item =>
-          item.produto_id === produtoSelecionado.id
+          item.produto_id === produto.id
             ? {
                 ...item,
                 quantidade: item.quantidade + quantidade,
@@ -341,9 +341,9 @@ function Emprestimos() {
       setItensForm(prev => [
         ...prev,
         {
-          produto_id: produtoSelecionado.id,
-          produto_nome: produtoSelecionado.nome,
-          codigo_interno: produtoSelecionado.codigo_interno,
+          produto_id: produto.id,
+          produto_nome: produto.nome,
+          codigo_interno: produto.codigo_interno,
           quantidade,
           individual,
         },
@@ -353,6 +353,9 @@ function Emprestimos() {
     setProdutoSelecionado(null)
     setCodigoProduto('')
     setQuantidadeProduto(1)
+    if (produtoDireto) {
+      addToast(`${produto.nome} adicionado ao empréstimo`, 'sucesso')
+    }
   }
 
   async function buscarProdutoPorCodigo() {
@@ -374,7 +377,7 @@ function Emprestimos() {
       return
     }
 
-    selecionarProduto(encontrado)
+    adicionarProduto(encontrado, 1)
   }
 
   async function salvarEmprestimo(event) {
@@ -1241,18 +1244,6 @@ function Emprestimos() {
                     disabled={buscandoProduto}
                   />
 
-                  <button
-                    type="button"
-                    onClick={
-                      buscarProdutoPorCodigo
-                    }
-                    disabled={
-                      buscandoProduto ||
-                      !codigoProduto.trim()
-                    }
-                  >
-                    Buscar
-                  </button>
                 </div>
 
                 {produtosFiltrados.length > 0 &&
@@ -1289,70 +1280,6 @@ function Emprestimos() {
                       )}
                     </div>
                   )}
-
-                {produtoSelecionado && (
-                  <div
-                    className={
-                      styles.produtoSelecionado
-                    }
-                  >
-                    <div>
-                      <strong>
-                        {produtoSelecionado.nome}
-                      </strong>
-
-                      <span>
-                        Código:{' '}
-                        {
-                          produtoSelecionado.codigo_interno || produtoSelecionado.codigo_barras || produtoSelecionado.codigo_barra || '—'
-                        }
-                      </span>
-
-                      <span>
-                        Estoque:{' '}
-                        {
-                          produtoSelecionado.quantidade_atual ??
-                          0
-                        }
-                      </span>
-                    </div>
-
-                    <div
-                      className={
-                        styles.produtoAcao
-                      }
-                    >
-                      {!(
-                        produtoSelecionado.categoria_tipo_controle ===
-                          'individual' ||
-                        produtoSelecionado.tipo_controle ===
-                          'individual'
-                      ) && (
-                        <input
-                          type="number"
-                          min="1"
-                          value={
-                            quantidadeProduto
-                          }
-                          onChange={event =>
-                            setQuantidadeProduto(
-                              event.target.value
-                            )
-                          }
-                        />
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={
-                          adicionarProduto
-                        }
-                      >
-                        Adicionar
-                      </button>
-                    </div>
-                  </div>
-                )}
 
                 {itensForm.length > 0 && (
                   <div
