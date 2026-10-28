@@ -87,8 +87,6 @@ function Emprestimos() {
 
   const [salvando, setSalvando] = useState(false)
   const [buscandoProduto, setBuscandoProduto] = useState(false)
-  const [verificandoDisponibilidade, setVerificandoDisponibilidade] = useState(false)
-  const [disponibilidade, setDisponibilidade] = useState(null)
 
   const [devolucaoForm, setDevolucaoForm] = useState({
     observacoes: '',
@@ -243,10 +241,6 @@ function Emprestimos() {
   function limparFormulario() {
     setForm({
       pessoa_id: '',
-      data_retirada: hojeISO(),
-      periodo_retirada_id: '',
-      data_devolucao_prevista: '',
-      periodo_devolucao_prevista_id: '',
       observacoes: '',
     })
 
