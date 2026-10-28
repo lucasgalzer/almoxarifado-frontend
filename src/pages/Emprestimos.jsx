@@ -925,9 +925,9 @@ function Emprestimos() {
                         </strong>
 
                         <small>
-                          {obterNomePeriodo(
-                            emprestimo.periodo_retirada
-                          ) ||
+                          {(typeof emprestimo.periodo_retirada === 'string'
+                            ? emprestimo.periodo_retirada
+                            : emprestimo.periodo_retirada?.nome) ||
                             emprestimo.periodo_retirada_nome ||
                             '—'}
                         </small>
@@ -943,9 +943,9 @@ function Emprestimos() {
                             </strong>
 
                             <small>
-                              {obterNomePeriodo(
-                                emprestimo.periodo_devolucao_prevista
-                              ) ||
+                              {(typeof emprestimo.periodo_devolucao_prevista === 'string'
+                                ? emprestimo.periodo_devolucao_prevista
+                                : emprestimo.periodo_devolucao_prevista?.nome) ||
                                 emprestimo.periodo_devolucao_prevista_nome ||
                                 '—'}
                             </small>
