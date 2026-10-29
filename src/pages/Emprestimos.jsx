@@ -1160,7 +1160,7 @@ function Emprestimos() {
                     onChange={event => {
                       const valor = event.target.value
                       setBuscaPessoa(valor)
-                      setIndiceSugestaoPessoa(0)
+                      setIndiceSugestaoPessoa(-1)
                       setMostrarSugestoesPessoa(true)
                       setForm(prev => ({ ...prev, pessoa_id: '' }))
                     }}
