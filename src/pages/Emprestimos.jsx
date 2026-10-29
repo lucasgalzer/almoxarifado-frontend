@@ -81,7 +81,7 @@ function Emprestimos() {
 
   const [buscaPessoa, setBuscaPessoa] = useState('')
   const [mostrarSugestoesPessoa, setMostrarSugestoesPessoa] = useState(false)
-  const [indiceSugestaoPessoa, setIndiceSugestaoPessoa] = useState(0)
+  const [indiceSugestaoPessoa, setIndiceSugestaoPessoa] = useState(-1)
   const [codigoProduto, setCodigoProduto] = useState('')
   const [produtoSelecionado, setProdutoSelecionado] = useState(null)
   const [quantidadeProduto, setQuantidadeProduto] = useState(1)
@@ -1154,7 +1154,7 @@ function Emprestimos() {
                     type="text"
                     value={buscaPessoa || pessoasOptions.find(pessoa => String(pessoa.value) === String(form.pessoa_id))?.label || ''}
                     onFocus={() => {
-                      setIndiceSugestaoPessoa(0)
+                      setIndiceSugestaoPessoa(-1)
                       setMostrarSugestoesPessoa(true)
                     }}
                     onChange={event => {
@@ -1171,13 +1171,13 @@ function Emprestimos() {
 
                       if (event.key === 'ArrowDown' && mostrarSugestoesPessoa && opcoes.length > 0) {
                         event.preventDefault()
-                        setIndiceSugestaoPessoa(indice => Math.min(indice + 1, opcoes.length - 1))
+                        setIndiceSugestaoPessoa(indice => indice < 0 ? 0 : (indice + 1) % opcoes.length)
                       } else if (event.key === 'ArrowUp' && mostrarSugestoesPessoa && opcoes.length > 0) {
                         event.preventDefault()
-                        setIndiceSugestaoPessoa(indice => Math.max(indice - 1, 0))
+                        setIndiceSugestaoPessoa(indice => indice <= 0 ? opcoes.length - 1 : indice - 1)
                       } else if (event.key === 'Enter' && mostrarSugestoesPessoa && opcoes.length > 0) {
                         event.preventDefault()
-                        const pessoa = opcoes[Math.min(indiceSugestaoPessoa, opcoes.length - 1)]
+                        const pessoa = opcoes[indiceSugestaoPessoa < 0 ? 0 : Math.min(indiceSugestaoPessoa, opcoes.length - 1)]
                         setForm(prev => ({ ...prev, pessoa_id: String(pessoa.value) }))
                         setBuscaPessoa(pessoa.label)
                         setMostrarSugestoesPessoa(false)
