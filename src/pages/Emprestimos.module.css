@@ -455,25 +455,38 @@
   z-index: 1000;
   inset: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(18, 21, 29, .48);
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 0;
+  background: rgba(28, 35, 48, .24);
+  backdrop-filter: blur(1.5px);
 }
 
 .modal {
-  width: 100%;
-  max-width: 760px;
-  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  width: min(56vw, 900px);
+  min-width: 520px;
+  height: 100%;
+  max-height: 100vh;
   overflow: hidden;
-  border: 1px solid #e2e4e9;
-  border-radius: 13px;
-  background: #fff;
-  box-shadow: 0 20px 60px rgba(20, 24, 32, .18);
+  border: 0;
+  border-left: 1px solid #dfe4eb;
+  border-radius: 0;
+  background: #f8fafc;
+  box-shadow: -18px 0 48px rgba(20, 31, 50, .13);
+  animation: painelEmprestimoEntrar .22s ease-out;
 }
 
 .modalDevolucao {
-  max-width: 700px;
+  width: min(48vw, 700px);
+  min-width: 460px;
+  max-width: none;
+}
+
+@keyframes painelEmprestimoEntrar {
+  from { transform: translateX(28px); opacity: .7; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
 .modalHeader {
@@ -481,8 +494,9 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
-  padding: 20px 22px;
-  border-bottom: 1px solid #e8e9ed;
+  padding: 28px 30px 22px;
+  border-bottom: 1px solid #e4e8ef;
+  background: #fff;
 }
 
 .modalHeader h2 {
@@ -522,9 +536,11 @@
 }
 
 .modalBody {
-  max-height: calc(100vh - 140px);
+  flex: 1;
+  min-height: 0;
+  max-height: none;
   overflow-y: auto;
-  padding: 22px;
+  padding: 26px 30px;
 }
 
 .modalBody::-webkit-scrollbar {
@@ -906,12 +922,15 @@
    ========================================================= */
 
 .modalFooter {
+  position: sticky;
+  bottom: -26px;
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 20px;
-  padding-top: 16px;
+  margin: 20px -30px -26px;
+  padding: 16px 30px 22px;
   border-top: 1px solid #e7e9ed;
+  background: rgba(248, 250, 252, .97);
 }
 
 .btnCancelar,
@@ -1063,6 +1082,28 @@
   .btnCancelar,
   .btnSalvar {
     width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .modal,
+  .modalDevolucao {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .modalHeader {
+    padding: 20px 18px 16px;
+  }
+
+  .modalBody {
+    padding: 20px 18px;
+  }
+
+  .modalFooter {
+    bottom: -20px;
+    margin: 20px -18px -20px;
+    padding: 14px 18px 18px;
   }
 }
 
