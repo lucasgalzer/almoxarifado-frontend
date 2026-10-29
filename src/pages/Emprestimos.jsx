@@ -81,6 +81,7 @@ function Emprestimos() {
 
   const [buscaPessoa, setBuscaPessoa] = useState('')
   const [mostrarSugestoesPessoa, setMostrarSugestoesPessoa] = useState(false)
+  const [indiceSugestaoPessoa, setIndiceSugestaoPessoa] = useState(0)
   const [codigoProduto, setCodigoProduto] = useState('')
   const [produtoSelecionado, setProdutoSelecionado] = useState(null)
   const [quantidadeProduto, setQuantidadeProduto] = useState(1)
@@ -1152,15 +1153,38 @@ function Emprestimos() {
                   <input
                     type="text"
                     value={buscaPessoa || pessoasOptions.find(pessoa => String(pessoa.value) === String(form.pessoa_id))?.label || ''}
-                    onFocus={() => setMostrarSugestoesPessoa(true)}
+                    onFocus={() => {
+                      setIndiceSugestaoPessoa(0)
+                      setMostrarSugestoesPessoa(true)
+                    }}
                     onChange={event => {
                       const valor = event.target.value
                       setBuscaPessoa(valor)
+                      setIndiceSugestaoPessoa(0)
                       setMostrarSugestoesPessoa(true)
                       setForm(prev => ({ ...prev, pessoa_id: '' }))
                     }}
                     onKeyDown={event => {
-                      if (event.key === 'Escape') setMostrarSugestoesPessoa(false)
+                      const opcoes = pessoasOptions
+                        .filter(pessoa => pessoa.label.toLowerCase().includes(buscaPessoa.trim().toLowerCase()))
+                        .slice(0, 100)
+
+                      if (event.key === 'ArrowDown' && mostrarSugestoesPessoa && opcoes.length > 0) {
+                        event.preventDefault()
+                        setIndiceSugestaoPessoa(indice => Math.min(indice + 1, opcoes.length - 1))
+                      } else if (event.key === 'ArrowUp' && mostrarSugestoesPessoa && opcoes.length > 0) {
+                        event.preventDefault()
+                        setIndiceSugestaoPessoa(indice => Math.max(indice - 1, 0))
+                      } else if (event.key === 'Enter' && mostrarSugestoesPessoa && opcoes.length > 0) {
+                        event.preventDefault()
+                        const pessoa = opcoes[Math.min(indiceSugestaoPessoa, opcoes.length - 1)]
+                        setForm(prev => ({ ...prev, pessoa_id: String(pessoa.value) }))
+                        setBuscaPessoa(pessoa.label)
+                        setMostrarSugestoesPessoa(false)
+                        setIndiceSugestaoPessoa(0)
+                      } else if (event.key === 'Escape') {
+                        setMostrarSugestoesPessoa(false)
+                      }
                     }}
                     placeholder="Pesquise pelo nome da pessoa..."
                     autoComplete="off"
@@ -1171,16 +1195,19 @@ function Emprestimos() {
                       {pessoasOptions
                         .filter(pessoa => pessoa.label.toLowerCase().includes(buscaPessoa.trim().toLowerCase()))
                         .slice(0, 100)
-                        .map(pessoa => (
+                        .map((pessoa, indice) => (
                           <button
                             type="button"
                             key={pessoa.value}
                             className={styles.opcaoPessoa}
+                            aria-selected={indice === indiceSugestaoPessoa}
                             onMouseDown={event => event.preventDefault()}
+                            onMouseEnter={() => setIndiceSugestaoPessoa(indice)}
                             onClick={() => {
                               setForm(prev => ({ ...prev, pessoa_id: String(pessoa.value) }))
                               setBuscaPessoa(pessoa.label)
                               setMostrarSugestoesPessoa(false)
+                              setIndiceSugestaoPessoa(0)
                             }}
                           >
                             {pessoa.label}
