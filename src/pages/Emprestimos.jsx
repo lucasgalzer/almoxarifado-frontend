@@ -757,13 +757,7 @@ function Emprestimos() {
             className={styles.inputCodigo}
             disabled={devolvendo}
           />
-          <button
-            type="submit"
-            className={styles.btnDevolverRapido}
-            disabled={devolvendo || !codigoDevolucao.trim()}
-          >
-            {devolvendo ? 'Processando...' : 'Devolver'}
-          </button>
+
         </form>
         <button type="button" className={styles.btnNovo} onClick={abrirModalNovo}>
           + Inserir empréstimo
@@ -993,24 +987,7 @@ function Emprestimos() {
                             </button>
                           )}
 
-                          {(emprestimo.status ===
-                            'ativo' ||
-                            emprestimo.status ===
-                              'parcialmente_devolvido') && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                cancelarEmprestimo(
-                                  emprestimo
-                                )
-                              }
-                              className={
-                                styles.btnAcaoSecundaria
-                              }
-                            >
-                              Cancelar
-                            </button>
-                          )}
+
                         </div>
                       </td>
                     </tr>
