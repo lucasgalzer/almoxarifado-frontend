@@ -80,6 +80,7 @@ function Emprestimos() {
   })
 
   const [buscaPessoa, setBuscaPessoa] = useState('')
+  const [mostrarSugestoesPessoa, setMostrarSugestoesPessoa] = useState(false)
   const [codigoProduto, setCodigoProduto] = useState('')
   const [produtoSelecionado, setProdutoSelecionado] = useState(null)
   const [quantidadeProduto, setQuantidadeProduto] = useState(1)
@@ -1147,27 +1148,50 @@ function Emprestimos() {
             >
               <label className={styles.campoPessoa}>
                 Pessoa
-                <input
-                  type="text"
-                  list="pessoas-emprestimo-opcoes"
-                  value={buscaPessoa || pessoasOptions.find(pessoa => String(pessoa.value) === String(form.pessoa_id))?.label || ''}
-                  onChange={event => {
-                    const valor = event.target.value
-                    setBuscaPessoa(valor)
-                    const pessoa = pessoasOptions.find(
-                      item => item.label.toLowerCase() === valor.trim().toLowerCase()
-                    )
-                    setForm(prev => ({ ...prev, pessoa_id: pessoa ? String(pessoa.value) : '' }))
-                  }}
-                  placeholder="Pesquise pelo nome da pessoa..."
-                  autoComplete="off"
-                  required
-                />
-                <datalist id="pessoas-emprestimo-opcoes">
-                  {pessoasOptions.map(pessoa => (
-                    <option key={pessoa.value} value={pessoa.label} />
-                  ))}
-                </datalist>
+                <div className={styles.autocompletePessoa}>
+                  <input
+                    type="text"
+                    value={buscaPessoa || pessoasOptions.find(pessoa => String(pessoa.value) === String(form.pessoa_id))?.label || ''}
+                    onFocus={() => setMostrarSugestoesPessoa(true)}
+                    onChange={event => {
+                      const valor = event.target.value
+                      setBuscaPessoa(valor)
+                      setMostrarSugestoesPessoa(true)
+                      setForm(prev => ({ ...prev, pessoa_id: '' }))
+                    }}
+                    onKeyDown={event => {
+                      if (event.key === 'Escape') setMostrarSugestoesPessoa(false)
+                    }}
+                    placeholder="Pesquise pelo nome da pessoa..."
+                    autoComplete="off"
+                    required
+                  />
+                  {mostrarSugestoesPessoa && (
+                    <div className={styles.listaSugestoesPessoa}>
+                      {pessoasOptions
+                        .filter(pessoa => pessoa.label.toLowerCase().includes(buscaPessoa.trim().toLowerCase()))
+                        .slice(0, 100)
+                        .map(pessoa => (
+                          <button
+                            type="button"
+                            key={pessoa.value}
+                            className={styles.opcaoPessoa}
+                            onMouseDown={event => event.preventDefault()}
+                            onClick={() => {
+                              setForm(prev => ({ ...prev, pessoa_id: String(pessoa.value) }))
+                              setBuscaPessoa(pessoa.label)
+                              setMostrarSugestoesPessoa(false)
+                            }}
+                          >
+                            {pessoa.label}
+                          </button>
+                        ))}
+                      {pessoasOptions.filter(pessoa => pessoa.label.toLowerCase().includes(buscaPessoa.trim().toLowerCase())).length === 0 && (
+                        <div className={styles.semSugestoesPessoa}>Nenhuma pessoa encontrada.</div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </label>
 
               <div className={styles.secaoProduto}>
