@@ -25,31 +25,6 @@ function formatarData(data) {
   return `${dia}/${mes}/${ano}`
 }
 
-function hojeISO() {
-  const hoje = new Date()
-  const ano = hoje.getFullYear()
-  const mes = String(hoje.getMonth() + 1).padStart(2, '0')
-  const dia = String(hoje.getDate()).padStart(2, '0')
-
-  return `${ano}-${mes}-${dia}`
-}
-
-function obterNomePeriodo(periodo) {
-  if (!periodo) return '—'
-
-  if (periodo.nome && periodo.horario) {
-    return `${periodo.nome} — ${String(periodo.horario).slice(0, 5)}`
-  }
-
-  if (periodo.nome) return periodo.nome
-
-  if (periodo.horario) {
-    return String(periodo.horario).slice(0, 5)
-  }
-
-  return '—'
-}
-
 function obterStatusLabel(status) {
   const mapa = {
     ativo: 'Em aberto',
@@ -80,7 +55,6 @@ function Emprestimos() {
   const [emprestimos, setEmprestimos] = useState([])
   const [pessoas, setPessoas] = useState([])
   const [produtos, setProdutos] = useState([])
-  const [periodos, setPeriodos] = useState([])
 
   const [carregando, setCarregando] = useState(true)
   const [carregandoDados, setCarregandoDados] = useState(false)
@@ -102,13 +76,12 @@ function Emprestimos() {
 
   const [form, setForm] = useState({
     pessoa_id: '',
-    data_retirada: hojeISO(),
-    periodo_retirada_id: '',
-    data_devolucao_prevista: '',
-    periodo_devolucao_prevista_id: '',
     observacoes: '',
   })
 
+  const [buscaPessoa, setBuscaPessoa] = useState('')
+  const [mostrarSugestoesPessoa, setMostrarSugestoesPessoa] = useState(false)
+  const [indiceSugestaoPessoa, setIndiceSugestaoPessoa] = useState(0)
   const [codigoProduto, setCodigoProduto] = useState('')
   const [produtoSelecionado, setProdutoSelecionado] = useState(null)
   const [quantidadeProduto, setQuantidadeProduto] = useState(1)
@@ -116,8 +89,6 @@ function Emprestimos() {
 
   const [salvando, setSalvando] = useState(false)
   const [buscandoProduto, setBuscandoProduto] = useState(false)
-  const [verificandoDisponibilidade, setVerificandoDisponibilidade] = useState(false)
-  const [disponibilidade, setDisponibilidade] = useState(null)
 
   const [devolucaoForm, setDevolucaoForm] = useState({
     observacoes: '',
@@ -133,66 +104,11 @@ function Emprestimos() {
     carregarEmprestimos()
   }, [filtroStatus, filtroPessoa])
 
-  useEffect(() => {
-    const periodoCompleto =
-      form.data_retirada &&
-      form.periodo_retirada_id &&
-      form.data_devolucao_prevista &&
-      form.periodo_devolucao_prevista_id
-
-    if (!modalNovo || !itensForm.length || !periodoCompleto) {
-      setDisponibilidade(null)
-      setVerificandoDisponibilidade(false)
-      return
-    }
-
-    let ativo = true
-    const timer = setTimeout(async () => {
-      setVerificandoDisponibilidade(true)
-      setDisponibilidade(null)
-
-      try {
-        const { data } = await api.post('/emprestimos/disponibilidade', {
-          itens: itensForm.map(item => ({
-            produto_id: item.produto_id,
-            quantidade: item.quantidade
-          })),
-          data_retirada: form.data_retirada,
-          periodo_retirada_id: form.periodo_retirada_id,
-          data_devolucao_prevista: form.data_devolucao_prevista,
-          periodo_devolucao_prevista_id: form.periodo_devolucao_prevista_id
-        })
-        if (ativo) setDisponibilidade(data)
-      } catch (error) {
-        if (ativo) {
-          setDisponibilidade({
-            disponivel: false,
-            erro: error.response?.data?.erro || 'Não foi possível verificar a disponibilidade.'
-          })
-        }
-      } finally {
-        if (ativo) setVerificandoDisponibilidade(false)
-      }
-    }, 250)
-
-    return () => {
-      ativo = false
-      clearTimeout(timer)
-    }
-  }, [
-    modalNovo,
-    itensForm,
-    form.data_retirada,
-    form.periodo_retirada_id,
-    form.data_devolucao_prevista,
-    form.periodo_devolucao_prevista_id
-  ])
-
   async function carregarDadosIniciais() {
     try {
       setCarregandoDados(true)
 
-      const [pessoasResponse, produtosResponse, periodosResponse] =
+      const [pessoasResponse, produtosResponse] =
         await Promise.all([
           api.get('/pessoas', {
             params: {
@@ -205,8 +121,6 @@ function Emprestimos() {
               por_pagina: 'todos',
             },
           }),
-
-          api.get('/periodos-aula'),
         ])
 
       setPessoas(
@@ -221,11 +135,6 @@ function Emprestimos() {
           : produtosResponse.data?.dados || []
       )
 
-      setPeriodos(
-        Array.isArray(periodosResponse.data)
-          ? periodosResponse.data
-          : periodosResponse.data?.dados || []
-      )
     } catch (error) {
       console.error(error)
 
@@ -288,10 +197,12 @@ function Emprestimos() {
     return produtos
       .filter(produto => {
         const codigo = String(produto.codigo_interno || '').toLowerCase()
+        const codigoBarras = String(produto.codigo_barras || produto.codigo_barra || '').toLowerCase()
         const nome = String(produto.nome || '').toLowerCase()
 
         return (
           codigo.includes(buscaNormalizada) ||
+          codigoBarras.includes(buscaNormalizada) ||
           nome.includes(buscaNormalizada)
         )
       })
@@ -332,13 +243,10 @@ function Emprestimos() {
   function limparFormulario() {
     setForm({
       pessoa_id: '',
-      data_retirada: hojeISO(),
-      periodo_retirada_id: '',
-      data_devolucao_prevista: '',
-      periodo_devolucao_prevista_id: '',
       observacoes: '',
     })
 
+    setBuscaPessoa('')
     setCodigoProduto('')
     setProdutoSelecionado(null)
     setQuantidadeProduto(1)
@@ -359,9 +267,7 @@ function Emprestimos() {
   }
 
   function selecionarProduto(produto) {
-    setProdutoSelecionado(produto)
-    setCodigoProduto(produto.codigo_interno || '')
-    setQuantidadeProduto(1)
+    adicionarProduto(produto, 1)
   }
 
   function removerItemForm(produtoId) {
@@ -370,30 +276,32 @@ function Emprestimos() {
     )
   }
 
-  function adicionarProduto() {
-    if (!produtoSelecionado) {
+  function adicionarProduto(produtoDireto = null, quantidadeDireta = null) {
+    const produto = produtoDireto || produtoSelecionado
+
+    if (!produto) {
       addToast('Selecione um produto primeiro', 'erro')
       return
     }
 
-    if (produtoSelecionado.status !== 'disponivel') {
+    if (produto.status !== 'disponivel') {
       addToast(
-        `O produto está ${produtoSelecionado.status}`,
+        `O produto está ${produto.status}`,
         'erro'
       )
       return
     }
 
     const tipoControle =
-      produtoSelecionado.categoria_tipo_controle ||
-      produtoSelecionado.tipo_controle ||
+      produto.categoria_tipo_controle ||
+      produto.tipo_controle ||
       'quantidade'
 
     const individual = tipoControle === 'individual'
 
     const quantidade = individual
       ? 1
-      : Number(quantidadeProduto)
+      : Number(quantidadeDireta ?? quantidadeProduto)
 
     if (!Number.isInteger(quantidade) || quantidade <= 0) {
       addToast('Informe uma quantidade válida', 'erro')
@@ -402,17 +310,17 @@ function Emprestimos() {
 
     if (
       !individual &&
-      Number(produtoSelecionado.quantidade_atual || 0) < quantidade
+      Number(produto.quantidade_atual || 0) < quantidade
     ) {
       addToast(
-        `Estoque insuficiente. Disponível: ${produtoSelecionado.quantidade_atual || 0}`,
+        `Estoque insuficiente. Disponível: ${produto.quantidade_atual || 0}`,
         'erro'
       )
       return
     }
 
     const existente = itensForm.find(
-      item => item.produto_id === produtoSelecionado.id
+      item => item.produto_id === produto.id
     )
 
     if (existente) {
@@ -423,7 +331,7 @@ function Emprestimos() {
 
       setItensForm(prev =>
         prev.map(item =>
-          item.produto_id === produtoSelecionado.id
+          item.produto_id === produto.id
             ? {
                 ...item,
                 quantidade: item.quantidade + quantidade,
@@ -435,9 +343,9 @@ function Emprestimos() {
       setItensForm(prev => [
         ...prev,
         {
-          produto_id: produtoSelecionado.id,
-          produto_nome: produtoSelecionado.nome,
-          codigo_interno: produtoSelecionado.codigo_interno,
+          produto_id: produto.id,
+          produto_nome: produto.nome,
+          codigo_interno: produto.codigo_interno,
           quantidade,
           individual,
         },
@@ -447,6 +355,9 @@ function Emprestimos() {
     setProdutoSelecionado(null)
     setCodigoProduto('')
     setQuantidadeProduto(1)
+    if (produtoDireto) {
+      addToast(`${produto.nome} adicionado ao empréstimo`, 'sucesso')
+    }
   }
 
   async function buscarProdutoPorCodigo() {
@@ -456,8 +367,11 @@ function Emprestimos() {
 
     const encontrado = produtos.find(
       produto =>
-        String(produto.codigo_interno || '').toLowerCase() ===
-        codigo.toLowerCase()
+        [
+          produto.codigo_interno,
+          produto.codigo_barras,
+          produto.codigo_barra,
+        ].some(valor => String(valor || '').toLowerCase() === codigo.toLowerCase())
     )
 
     if (!encontrado) {
@@ -465,7 +379,7 @@ function Emprestimos() {
       return
     }
 
-    selecionarProduto(encontrado)
+    adicionarProduto(encontrado, 1)
   }
 
   async function salvarEmprestimo(event) {
@@ -478,45 +392,8 @@ function Emprestimos() {
       return
     }
 
-    if (!form.data_retirada) {
-      addToast('Informe a data da retirada', 'erro')
-      return
-    }
-
-    if (!form.periodo_retirada_id) {
-      addToast('Selecione o período da retirada', 'erro')
-      return
-    }
-
     if (itensForm.length === 0) {
       addToast('Adicione pelo menos um produto', 'erro')
-      return
-    }
-
-    if (!form.data_devolucao_prevista || !form.periodo_devolucao_prevista_id) {
-      addToast('Informe a data e o período previstos para devolução para verificar a disponibilidade.', 'erro')
-      return
-    }
-
-    if (form.data_devolucao_prevista < form.data_retirada) {
-      addToast('A devolução não pode ocorrer antes da retirada.', 'erro')
-      return
-    }
-
-    const ordemRetirada = periodos.find(p => String(p.id) === String(form.periodo_retirada_id))?.ordem
-    const ordemDevolucao = periodos.find(p => String(p.id) === String(form.periodo_devolucao_prevista_id))?.ordem
-    if (form.data_devolucao_prevista === form.data_retirada && Number(ordemDevolucao) <= Number(ordemRetirada)) {
-      addToast('O período de devolução deve ser posterior ao período de retirada.', 'erro')
-      return
-    }
-
-    if (verificandoDisponibilidade || !disponibilidade) {
-      addToast('Aguarde a verificação de disponibilidade antes de registrar.', 'erro')
-      return
-    }
-
-    if (!disponibilidade.disponivel) {
-      addToast(disponibilidade.erro || (disponibilidade.resultados || []).filter(item => !item.disponivel).map(item => item.detalhe || item.mensagem || item.produto).join(' ') || 'Há equipamentos indisponíveis no período selecionado.', 'erro')
       return
     }
 
@@ -525,12 +402,6 @@ function Emprestimos() {
     try {
       const payload = {
         pessoa_id: form.pessoa_id,
-        data_retirada: form.data_retirada,
-        periodo_retirada_id: form.periodo_retirada_id,
-        data_devolucao_prevista:
-          form.data_devolucao_prevista || null,
-        periodo_devolucao_prevista_id:
-          form.periodo_devolucao_prevista_id || null,
         observacoes: form.observacoes || null,
 
         itens: itensForm.map(item => ({
@@ -878,57 +749,33 @@ function Emprestimos() {
 
   return (
     <div className={styles.pagina}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.titulo}>
-            Empréstimos
-          </h1>
-
-          <p className={styles.subtitulo}>
-            {emprestimosFiltrados.length}{' '}
-            empréstimo(s) encontrado(s)
-          </p>
-        </div>
-
-        <button
-          type="button"
-          className={styles.btnNovo}
-          onClick={abrirModalNovo}
-        >
-          + Novo empréstimo
-        </button>
-      </div>
-
       <div className={styles.acoesRapidas}>
-        <form
-          onSubmit={handleDevolverPorCodigo}
-          className={styles.formDevolucao}
-        >
+        <form onSubmit={handleDevolverPorCodigo} className={styles.formDevolucao}>
           <input
             ref={inputDevolucaoRef}
             value={codigoDevolucao}
-            onChange={event =>
-              setCodigoDevolucao(event.target.value)
-            }
-            placeholder="Escaneie o código para devolver..."
+            onChange={event => setCodigoDevolucao(event.target.value)}
+            placeholder="Ler código de barras..."
             className={styles.inputCodigo}
             disabled={devolvendo}
           />
 
-          <button
-            type="submit"
-            className={styles.btnDevolverRapido}
-            disabled={
-              devolvendo ||
-              !codigoDevolucao.trim()
-            }
-          >
-            {devolvendo
-              ? 'Devolvendo...'
-              : 'Devolver'}
-          </button>
         </form>
+        <button type="button" className={styles.btnNovo} onClick={abrirModalNovo}>
+          + Inserir empréstimo
+        </button>
       </div>
+
+      <section className={styles.painelLista}>
+        <div className={styles.header}>
+          <div>
+            <h1 className={styles.titulo}>Empréstimos pendentes</h1>
+            <p className={styles.subtitulo}>
+              {emprestimosFiltrados.length} empréstimo(s) encontrado(s)
+              <span className={styles.dicaTabela}>Clique sobre um empréstimo para abrir os detalhes.</span>
+            </p>
+          </div>
+        </div>
 
       <div className={styles.filtros}>
         <select
@@ -1056,9 +903,9 @@ function Emprestimos() {
                         </strong>
 
                         <small>
-                          {obterNomePeriodo(
-                            emprestimo.periodo_retirada
-                          ) ||
+                          {(typeof emprestimo.periodo_retirada === 'string'
+                            ? emprestimo.periodo_retirada
+                            : emprestimo.periodo_retirada?.nome) ||
                             emprestimo.periodo_retirada_nome ||
                             '—'}
                         </small>
@@ -1074,9 +921,9 @@ function Emprestimos() {
                             </strong>
 
                             <small>
-                              {obterNomePeriodo(
-                                emprestimo.periodo_devolucao_prevista
-                              ) ||
+                              {(typeof emprestimo.periodo_devolucao_prevista === 'string'
+                                ? emprestimo.periodo_devolucao_prevista
+                                : emprestimo.periodo_devolucao_prevista?.nome) ||
                                 emprestimo.periodo_devolucao_prevista_nome ||
                                 '—'}
                             </small>
@@ -1142,24 +989,7 @@ function Emprestimos() {
                             </button>
                           )}
 
-                          {(emprestimo.status ===
-                            'ativo' ||
-                            emprestimo.status ===
-                              'parcialmente_devolvido') && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                cancelarEmprestimo(
-                                  emprestimo
-                                )
-                              }
-                              className={
-                                styles.btnAcaoSecundaria
-                              }
-                            >
-                              Cancelar
-                            </button>
-                          )}
+
                         </div>
                       </td>
                     </tr>
@@ -1290,6 +1120,8 @@ function Emprestimos() {
         )}
       </div>
 
+      </section>
+
       {modalNovo && (
         <div className={styles.overlay}>
           <div className={styles.modal}>
@@ -1315,176 +1147,79 @@ function Emprestimos() {
               onSubmit={salvarEmprestimo}
               className={styles.modalBody}
             >
-              <div className={styles.grid2}>
-                <label>
-                  Pessoa
-                  <select
-                    value={form.pessoa_id}
-                    onChange={event =>
-                      setForm(prev => ({
-                        ...prev,
-                        pessoa_id:
-                          event.target.value,
-                      }))
-                    }
-                    required
-                  >
-                    <option value="">
-                      Selecione uma pessoa
-                    </option>
-
-                    {pessoasOptions.map(
-                      pessoa => (
-                        <option
-                          key={pessoa.value}
-                          value={pessoa.value}
-                        >
-                          {pessoa.label}
-                        </option>
-                      )
-                    )}
-                  </select>
-                </label>
-
-                <label>
-                  Data da retirada
+              <label className={styles.campoPessoa}>
+                Pessoa
+                <div className={styles.autocompletePessoa}>
                   <input
-                    type="date"
-                    value={form.data_retirada}
-                    onChange={event =>
-                      setForm(prev => ({
-                        ...prev,
-                        data_retirada:
-                          event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-              </div>
-
-              <div className={styles.grid2}>
-                <label>
-                  Período da retirada
-                  <select
-                    value={
-                      form.periodo_retirada_id
-                    }
-                    onChange={event =>
-                      setForm(prev => ({
-                        ...prev,
-                        periodo_retirada_id:
-                          event.target.value,
-                      }))
-                    }
-                    required
-                  >
-                    <option value="">
-                      Selecione o período
-                    </option>
-
-                    {periodos.map(periodo => (
-                      <option
-                        key={periodo.id}
-                        value={periodo.id}
-                      >
-                        {obterNomePeriodo(
-                          periodo
-                        )}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>
-                  Data prevista para devolução
-                  <input
-                    type="date"
-                    value={
-                      form.data_devolucao_prevista
-                    }
-                    min={form.data_retirada}
-                    onChange={event =>
-                      setForm(prev => ({
-                        ...prev,
-                        data_devolucao_prevista:
-                          event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-              </div>
-
-              <div className={styles.grid2}>
-                <label>
-                  Período previsto para devolução
-                  <select
-                    value={
-                      form.periodo_devolucao_prevista_id
-                    }
-                    onChange={event =>
-                      setForm(prev => ({
-                        ...prev,
-                        periodo_devolucao_prevista_id:
-                          event.target.value,
-                      }))
-                    }
-                    disabled={
-                      !form.data_devolucao_prevista
-                    }
-                  >
-                    <option value="">
-                      Selecione o período
-                    </option>
-
-                    {periodos.map(periodo => (
-                      <option
-                        key={periodo.id}
-                        value={periodo.id}
-                      >
-                        {obterNomePeriodo(
-                          periodo
-                        )}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <div />
-              </div>
-
-
-              {itensForm.length > 0 &&
-                form.data_retirada &&
-                form.periodo_retirada_id &&
-                form.data_devolucao_prevista &&
-                form.periodo_devolucao_prevista_id && (
-                  <div
-                    role="status"
-                    style={{
-                      margin: '12px 0',
-                      padding: '10px 12px',
-                      borderRadius: 8,
-                      border: `1px solid ${verificandoDisponibilidade ? '#93c5fd' : disponibilidade?.disponivel ? '#86efac' : '#fca5a5'}`,
-                      background: verificandoDisponibilidade ? '#eff6ff' : disponibilidade?.disponivel ? '#f0fdf4' : '#fef2f2',
-                      color: verificandoDisponibilidade ? '#1d4ed8' : disponibilidade?.disponivel ? '#166534' : '#991b1b',
-                      fontSize: 13
+                    type="text"
+                    value={buscaPessoa || pessoasOptions.find(pessoa => String(pessoa.value) === String(form.pessoa_id))?.label || ''}
+                    onFocus={() => {
+                      setIndiceSugestaoPessoa(0)
+                      setMostrarSugestoesPessoa(true)
                     }}
-                  >
-                    {verificandoDisponibilidade
-                      ? 'Verificando disponibilidade para todas as datas e períodos...'
-                      : disponibilidade?.erro
-                        ? disponibilidade.erro
-                        : disponibilidade?.disponivel
-                          ? 'Disponibilidade confirmada para o período selecionado.'
-                          : disponibilidade
-                            ? (disponibilidade.resultados || [])
-                                .filter(item => !item.disponivel)
-                                .map(item => `${item.produto || item.codigo_interno || 'Produto'}: ${item.detalhe || item.mensagem || 'indisponível no período'}`)
-                                .join(' ')
-                            : 'Aguardando verificação de disponibilidade...'}
-                  </div>
-                )}
+                    onChange={event => {
+                      const valor = event.target.value
+                      setBuscaPessoa(valor)
+                      setIndiceSugestaoPessoa(0)
+                      setMostrarSugestoesPessoa(true)
+                      setForm(prev => ({ ...prev, pessoa_id: '' }))
+                    }}
+                    onKeyDown={event => {
+                      const opcoes = pessoasOptions
+                        .filter(pessoa => pessoa.label.toLowerCase().includes(buscaPessoa.trim().toLowerCase()))
+                        .slice(0, 100)
+
+                      if (event.key === 'ArrowDown' && mostrarSugestoesPessoa && opcoes.length > 0) {
+                        event.preventDefault()
+                        setIndiceSugestaoPessoa(indice => Math.min(indice + 1, opcoes.length - 1))
+                      } else if (event.key === 'ArrowUp' && mostrarSugestoesPessoa && opcoes.length > 0) {
+                        event.preventDefault()
+                        setIndiceSugestaoPessoa(indice => Math.max(indice - 1, 0))
+                      } else if (event.key === 'Enter' && mostrarSugestoesPessoa && opcoes.length > 0) {
+                        event.preventDefault()
+                        const pessoa = opcoes[Math.min(indiceSugestaoPessoa, opcoes.length - 1)]
+                        setForm(prev => ({ ...prev, pessoa_id: String(pessoa.value) }))
+                        setBuscaPessoa(pessoa.label)
+                        setMostrarSugestoesPessoa(false)
+                        setIndiceSugestaoPessoa(0)
+                      } else if (event.key === 'Escape') {
+                        setMostrarSugestoesPessoa(false)
+                      }
+                    }}
+                    placeholder="Pesquise pelo nome da pessoa..."
+                    autoComplete="off"
+                    required
+                  />
+                  {mostrarSugestoesPessoa && (
+                    <div className={styles.listaSugestoesPessoa}>
+                      {pessoasOptions
+                        .filter(pessoa => pessoa.label.toLowerCase().includes(buscaPessoa.trim().toLowerCase()))
+                        .slice(0, 100)
+                        .map((pessoa, indice) => (
+                          <button
+                            type="button"
+                            key={pessoa.value}
+                            className={styles.opcaoPessoa}
+                            aria-selected={indice === indiceSugestaoPessoa}
+                            onMouseDown={event => event.preventDefault()}
+                            onMouseEnter={() => setIndiceSugestaoPessoa(indice)}
+                            onClick={() => {
+                              setForm(prev => ({ ...prev, pessoa_id: String(pessoa.value) }))
+                              setBuscaPessoa(pessoa.label)
+                              setMostrarSugestoesPessoa(false)
+                              setIndiceSugestaoPessoa(0)
+                            }}
+                          >
+                            {pessoa.label}
+                          </button>
+                        ))}
+                      {pessoasOptions.filter(pessoa => pessoa.label.toLowerCase().includes(buscaPessoa.trim().toLowerCase())).length === 0 && (
+                        <div className={styles.semSugestoesPessoa}>Nenhuma pessoa encontrada.</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </label>
 
               <div className={styles.secaoProduto}>
                 <div className={styles.secaoTitulo}>
@@ -1493,7 +1228,7 @@ function Emprestimos() {
                   </strong>
 
                   <span>
-                    Use o código interno ou nome.
+                    Pesquise pelo nome, código interno ou código de barras.
                   </span>
                 </div>
 
@@ -1517,22 +1252,10 @@ function Emprestimos() {
                         buscarProdutoPorCodigo()
                       }
                     }}
-                    placeholder="Código do produto..."
+                    placeholder="Nome, código interno ou código de barras..."
                     disabled={buscandoProduto}
                   />
 
-                  <button
-                    type="button"
-                    onClick={
-                      buscarProdutoPorCodigo
-                    }
-                    disabled={
-                      buscandoProduto ||
-                      !codigoProduto.trim()
-                    }
-                  >
-                    Buscar
-                  </button>
                 </div>
 
                 {produtosFiltrados.length > 0 &&
@@ -1569,70 +1292,6 @@ function Emprestimos() {
                       )}
                     </div>
                   )}
-
-                {produtoSelecionado && (
-                  <div
-                    className={
-                      styles.produtoSelecionado
-                    }
-                  >
-                    <div>
-                      <strong>
-                        {produtoSelecionado.nome}
-                      </strong>
-
-                      <span>
-                        Código:{' '}
-                        {
-                          produtoSelecionado.codigo_interno
-                        }
-                      </span>
-
-                      <span>
-                        Estoque:{' '}
-                        {
-                          produtoSelecionado.quantidade_atual ??
-                          0
-                        }
-                      </span>
-                    </div>
-
-                    <div
-                      className={
-                        styles.produtoAcao
-                      }
-                    >
-                      {!(
-                        produtoSelecionado.categoria_tipo_controle ===
-                          'individual' ||
-                        produtoSelecionado.tipo_controle ===
-                          'individual'
-                      ) && (
-                        <input
-                          type="number"
-                          min="1"
-                          value={
-                            quantidadeProduto
-                          }
-                          onChange={event =>
-                            setQuantidadeProduto(
-                              event.target.value
-                            )
-                          }
-                        />
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={
-                          adicionarProduto
-                        }
-                      >
-                        Adicionar
-                      </button>
-                    </div>
-                  </div>
-                )}
 
                 {itensForm.length > 0 && (
                   <div
