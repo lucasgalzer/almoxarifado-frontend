@@ -747,57 +747,39 @@ function Emprestimos() {
 
   return (
     <div className={styles.pagina}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.titulo}>
-            Empréstimos
-          </h1>
-
-          <p className={styles.subtitulo}>
-            {emprestimosFiltrados.length}{' '}
-            empréstimo(s) encontrado(s)
-          </p>
-        </div>
-
-        <button
-          type="button"
-          className={styles.btnNovo}
-          onClick={abrirModalNovo}
-        >
-          + Novo empréstimo
-        </button>
-      </div>
-
       <div className={styles.acoesRapidas}>
-        <form
-          onSubmit={handleDevolverPorCodigo}
-          className={styles.formDevolucao}
-        >
+        <form onSubmit={handleDevolverPorCodigo} className={styles.formDevolucao}>
           <input
             ref={inputDevolucaoRef}
             value={codigoDevolucao}
-            onChange={event =>
-              setCodigoDevolucao(event.target.value)
-            }
-            placeholder="Escaneie o código para devolver..."
+            onChange={event => setCodigoDevolucao(event.target.value)}
+            placeholder="Ler código de barras..."
             className={styles.inputCodigo}
             disabled={devolvendo}
           />
-
           <button
             type="submit"
             className={styles.btnDevolverRapido}
-            disabled={
-              devolvendo ||
-              !codigoDevolucao.trim()
-            }
+            disabled={devolvendo || !codigoDevolucao.trim()}
           >
-            {devolvendo
-              ? 'Devolvendo...'
-              : 'Devolver'}
+            {devolvendo ? 'Processando...' : 'Devolver'}
           </button>
         </form>
+        <button type="button" className={styles.btnNovo} onClick={abrirModalNovo}>
+          + Inserir empréstimo
+        </button>
       </div>
+
+      <section className={styles.painelLista}>
+        <div className={styles.header}>
+          <div>
+            <h1 className={styles.titulo}>Empréstimos pendentes</h1>
+            <p className={styles.subtitulo}>
+              {emprestimosFiltrados.length} empréstimo(s) encontrado(s)
+              <span className={styles.dicaTabela}>Clique sobre um empréstimo para abrir os detalhes.</span>
+            </p>
+          </div>
+        </div>
 
       <div className={styles.filtros}>
         <select
@@ -1158,6 +1140,8 @@ function Emprestimos() {
           </table>
         )}
       </div>
+
+      </section>
 
       {modalNovo && (
         <div className={styles.overlay}>
