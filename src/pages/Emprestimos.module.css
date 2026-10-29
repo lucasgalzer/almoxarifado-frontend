@@ -1377,3 +1377,85 @@
     justify-content: space-between;
   }
 }
+
+/* Layout ampliado: ocupa melhor a área útil da tela */
+.pagina {
+  width: 100%;
+  max-width: none;
+  min-height: calc(100vh - 42px);
+  box-sizing: border-box;
+  padding: 28px clamp(24px, 3vw, 56px) 32px;
+}
+
+.acoesRapidas {
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 16px;
+}
+
+.acoesRapidas .inputCodigo {
+  min-height: 46px;
+  box-sizing: border-box;
+  font-size: 15px;
+}
+
+.acoesRapidas .btnNovo {
+  min-height: 46px;
+  min-width: 220px;
+  font-size: 14px;
+}
+
+.painelLista {
+  min-height: calc(100vh - 250px);
+  padding: 28px 26px 24px;
+}
+
+.painelLista .tabela {
+  min-height: calc(100vh - 390px);
+}
+
+.painelLista .tabela table {
+  width: 100%;
+  font-size: 14px;
+}
+
+.painelLista .tabela th {
+  padding: 14px 12px;
+  font-size: 13px;
+}
+
+.painelLista .tabela td {
+  padding: 14px 12px;
+  font-size: 14px;
+}
+
+.painelLista .tabela tbody tr {
+  height: 56px;
+}
+
+.titulo {
+  font-size: clamp(26px, 1.8vw, 32px);
+}
+
+.subtitulo {
+  font-size: 14px;
+}
+
+@media (max-width: 900px) {
+  .pagina {
+    padding: 22px 16px 24px;
+  }
+
+  .painelLista {
+    min-height: auto;
+    padding: 20px 14px;
+  }
+
+  .painelLista .tabela {
+    min-height: 280px;
+  }
+
+  .acoesRapidas .btnNovo {
+    min-width: 170px;
+  }
+}
