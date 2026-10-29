@@ -76,6 +76,30 @@
   box-shadow: 0 2px 8px rgba(30, 44, 64, .025);
 }
 
+.acoesRapidas .formDevolucao {
+  flex: 1;
+  min-width: 0;
+}
+
+.acoesRapidas .inputCodigo {
+  border: 1px solid #ff4b4b;
+  background: #ffd0d0;
+  color: #a91f1f;
+}
+
+.acoesRapidas .inputCodigo::placeholder {
+  color: #c87575;
+}
+
+.acoesRapidas .btnNovo {
+  min-width: 205px;
+  min-height: 42px;
+  border: 1px solid #16a34a;
+  border-radius: 7px;
+  background: #b8f5ce;
+  color: #16803d;
+}
+
 .painelLista {
   min-height: 430px;
   padding: 24px 20px 18px;
@@ -83,6 +107,38 @@
   border-radius: 9px;
   background: #fff;
   box-shadow: 0 2px 8px rgba(30, 44, 64, .025);
+}
+
+.painelLista .tabela {
+  min-height: 280px;
+}
+
+.painelLista .tabela table {
+  min-width: 0;
+}
+
+.painelLista .tabela td {
+  text-align: center;
+}
+
+.painelLista .tabela th {
+  text-align: center;
+}
+
+.painelLista .tabela tbody tr {
+  height: 43px;
+}
+
+.painelLista .tabela tbody tr:hover {
+  background: #f8fafc;
+}
+
+.painelLista .acoesTabela {
+  justify-content: center;
+}
+
+.painelLista .btnAcao {
+  display: none;
 }
 
 .dicaTabela {
@@ -169,7 +225,7 @@
    FILTROS
    ========================================================= */
 
-.filtros {
+.painelLista .filtros {
   display: grid;
   grid-template-columns: 190px 250px 1fr;
   gap: 10px;
@@ -1130,6 +1186,23 @@
 }
 
 @media (max-width: 760px) {
+  .acoesRapidas .formDevolucao {
+    width: 100%;
+  }
+
+  .acoesRapidas .btnNovo {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .painelLista .filtros {
+    grid-template-columns: 1fr;
+  }
+
+  .painelLista .tabela table {
+    min-width: 620px;
+  }
+
   .acoesRapidas {
     flex-direction: column;
     align-items: stretch;
