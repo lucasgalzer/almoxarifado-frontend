@@ -716,9 +716,13 @@
 }
 
 .opcaoPessoa:hover,
-.opcaoPessoa:focus-visible {
+.opcaoPessoa:focus-visible,
+.opcaoPessoa[aria-selected="true"] {
   outline: none;
-  background: #e2e8f0;
+  background: #bfdbfe;
+  color: #1d4ed8;
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 #2563eb;
 }
 
 .semSugestoesPessoa {
