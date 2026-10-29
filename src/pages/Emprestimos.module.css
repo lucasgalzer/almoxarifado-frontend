@@ -677,6 +677,56 @@
   font-weight: 650;
 }
 
+.autocompletePessoa {
+  position: relative;
+  width: 100%;
+}
+
+.autocompletePessoa > input {
+  width: 100%;
+}
+
+.listaSugestoesPessoa {
+  position: absolute;
+  z-index: 1200;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid #dfe4eb;
+  border-radius: 7px;
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(28, 43, 63, .14);
+}
+
+.opcaoPessoa {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 4px;
+  background: #fff;
+  color: #40556f;
+  font-size: 13px;
+  font-weight: 400;
+  text-align: left;
+  cursor: pointer;
+}
+
+.opcaoPessoa:hover,
+.opcaoPessoa:focus-visible {
+  outline: none;
+  background: #e2e8f0;
+}
+
+.semSugestoesPessoa {
+  padding: 12px;
+  color: #74839a;
+  font-size: 12px;
+}
+
 .modalBody input,
 .modalBody select,
 .modalBody textarea {
