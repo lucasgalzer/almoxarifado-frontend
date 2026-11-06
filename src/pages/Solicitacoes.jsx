@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import api from '../services/api'
 import ModalSolicitacao from '../components/ModalSolicitacao'
 import ModalDetalhesSolicitacao from '../components/ModalDetalhesSolicitacao'
-import ModalConfirmacao from '../components/ModalConfirmacao'
 import { useToast } from '../components/Toast'
 import styles from './Solicitacoes.module.css'
 import Select from 'react-select'
@@ -27,7 +26,6 @@ function Solicitacoes() {
   const [carregando, setCarregando] = useState(true)
   const [modalAberto, setModalAberto] = useState(false)
   const [solicitacaoSelecionada, setSolicitacaoSelecionada] = useState(null)
-  const [solicitacaoCancelando, setSolicitacaoCancelando] = useState(null)
 
   useEffect(() => {
     api.get('/setores').then(({ data }) => setSetores((data || []).filter(item => item.ativo))).catch(() => {})
@@ -46,19 +44,6 @@ function Solicitacoes() {
       console.error(error)
       addToast(error.response?.data?.erro || 'Erro ao carregar solicitações', 'erro')
     } finally { setCarregando(false) }
-  }
-
-  async function handleCancelar() {
-    if (!solicitacaoCancelando) return
-    try {
-      await api.patch(`/solicitacoes/${solicitacaoCancelando.id}/status`, { status: 'cancelada' })
-      addToast('Solicitação cancelada.', 'aviso')
-      setSolicitacaoCancelando(null)
-      carregarSolicitacoes()
-    } catch (error) {
-      addToast(error.response?.data?.erro || 'Erro ao cancelar solicitação', 'erro')
-      setSolicitacaoCancelando(null)
-    }
   }
 
   const formatarData = data => data ? new Date(data).toLocaleDateString('pt-BR') : '—'
@@ -93,7 +78,6 @@ function Solicitacoes() {
               </div>
               <div className={styles.cardAcoes}>
                 <button className={styles.btnDetalhes} onClick={() => setSolicitacaoSelecionada(sol)}>Ver detalhes</button>
-                {sol.status === 'pendente' && <button className={styles.btnCancelar} onClick={() => setSolicitacaoCancelando(sol)}>Cancelar</button>}
               </div>
             </div>
             {sol.solicitante_nome && <p className={styles.cardFinalidade}>Solicitante: {sol.solicitante_nome}</p>}
@@ -105,7 +89,6 @@ function Solicitacoes() {
       </div>
       {modalAberto && <ModalSolicitacao onFechar={() => setModalAberto(false)} onSalvar={() => { setModalAberto(false); addToast('Solicitação enviada com sucesso!', 'sucesso'); carregarSolicitacoes() }} />}
       {solicitacaoSelecionada && <ModalDetalhesSolicitacao solicitacao={solicitacaoSelecionada} onFechar={() => setSolicitacaoSelecionada(null)} onAtualizar={() => { setSolicitacaoSelecionada(null); addToast('Solicitação atualizada!', 'sucesso'); carregarSolicitacoes() }} />}
-      {solicitacaoCancelando && <ModalConfirmacao titulo="Cancelar solicitação" mensagem="Tem certeza que deseja cancelar esta solicitação? Esta ação não pode ser desfeita." onConfirmar={handleCancelar} onCancelar={() => setSolicitacaoCancelando(null)} tipo="aviso" />}
     </div>
   )
 }
