@@ -71,6 +71,7 @@ function Emprestimos() {
 
   const [codigoDevolucao, setCodigoDevolucao] = useState('')
   const [devolvendo, setDevolvendo] = useState(false)
+  const [itensCodigoPendentes, setItensCodigoPendentes] = useState([])
 
   const inputDevolucaoRef = useRef(null)
 
@@ -453,44 +454,126 @@ function Emprestimos() {
     setDevolvendo(true)
 
     try {
+      const normalizar = valor => String(valor || '').trim().toLowerCase()
+      const produto = produtos.find(item =>
+        [
+          item.codigo_interno,
+          item.codigo_barras,
+          item.codigo_barra,
+        ].some(valor => normalizar(valor) === normalizar(codigo))
+      )
+
+      if (!produto) {
+        addToast(`Produto "${codigo}" não encontrado`, 'erro')
+        return
+      }
+
+      const tipoControle = String(
+        produto.categoria_tipo_controle ||
+        produto.tipo_controle ||
+        'quantidade'
+      ).trim().toLowerCase()
+
+      // Equipamentos individuais continuam sendo identificados diretamente
+      // pelo código físico no backend.
+      if (tipoControle === 'individual') {
+        const { data } = await api.post(
+          `/emprestimos/devolver/codigo/${encodeURIComponent(codigo)}`
+        )
+
+        tocarSom('devolucao')
+        addToast(
+          `${data.mensagem || 'Produto devolvido'}${data.pessoa ? ` — ${data.pessoa}` : ''}`,
+          'sucesso'
+        )
+        setCodigoDevolucao('')
+        await carregarEmprestimos()
+        return
+      }
+
+      // Para controle por quantidade, busca os empréstimos abertos e
+      // identifica o item_id exato que deve receber a devolução.
+      const { data: dadosEmprestimos } = await api.get('/emprestimos')
+      const listaEmprestimos = Array.isArray(dadosEmprestimos)
+        ? dadosEmprestimos
+        : dadosEmprestimos?.dados || []
+
+      const candidatos = listaEmprestimos.flatMap(emprestimo => {
+        if (!['ativo', 'parcialmente_devolvido'].includes(emprestimo.status)) {
+          return []
+        }
+
+        return (Array.isArray(emprestimo.itens) ? emprestimo.itens : [])
+          .filter(item =>
+            String(item.produto_id) === String(produto.id) &&
+            Number(item.quantidade || 0) - Number(item.quantidade_devolvida || 0) > 0
+          )
+          .map(item => ({
+            emprestimoId: emprestimo.id,
+            pessoaNome: emprestimo.pessoa_nome || 'Pessoa não identificada',
+            item,
+          }))
+      })
+
+      if (candidatos.length === 0) {
+        addToast(`Não há empréstimo em aberto para "${produto.nome}"`, 'erro')
+        return
+      }
+
+      if (candidatos.length > 1) {
+        setItensCodigoPendentes(candidatos)
+        setCodigoDevolucao('')
+        return
+      }
+
+      await registrarDevolucaoPorCodigo(candidatos[0])
+    } catch (error) {
+      console.error(error)
+      addToast(
+        error.response?.data?.erro || 'Não foi possível realizar a devolução',
+        'erro'
+      )
+    } finally {
+      setDevolvendo(false)
+      setTimeout(() => inputDevolucaoRef.current?.focus(), 100)
+    }
+  }
+
+  async function registrarDevolucaoPorCodigo(candidato) {
+    if (!candidato?.emprestimoId || !candidato?.item?.id) return
+
+    setDevolvendo(true)
+
+    try {
       const { data } = await api.post(
-        `/emprestimos/devolver/codigo/${encodeURIComponent(codigo)}`
+        `/emprestimos/${candidato.emprestimoId}/devolver`,
+        {
+          item_id: candidato.item.id,
+          quantidade: 1,
+          condicao: 'normal',
+        }
       )
 
       tocarSom('devolucao')
-
       addToast(
-        `${data.mensagem || 'Produto devolvido'}${
-          data.pessoa ? ` — ${data.pessoa}` : ''
-        }`,
+        `${data?.mensagem || 'Devolução registrada'} — ${candidato.pessoaNome}`,
         'sucesso'
       )
-
+      setItensCodigoPendentes([])
       setCodigoDevolucao('')
-
       await carregarEmprestimos()
-
-      setTimeout(() => {
-        inputDevolucaoRef.current?.focus()
-      }, 100)
     } catch (error) {
       console.error(error)
-
       addToast(
-        error.response?.data?.erro ||
-          'Não foi possível realizar a devolução',
+        error.response?.data?.erro || 'Não foi possível realizar a devolução',
         'erro'
       )
-
-      setCodigoDevolucao('')
-
-      setTimeout(() => {
-        inputDevolucaoRef.current?.focus()
-      }, 100)
     } finally {
       setDevolvendo(false)
+      setTimeout(() => inputDevolucaoRef.current?.focus(), 100)
     }
   }
+
 
   function abrirDevolucao(emprestimo) {
     setEmprestimoSelecionado(emprestimo)
@@ -1388,6 +1471,55 @@ function Emprestimos() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {itensCodigoPendentes.length > 0 && (
+        <div className={styles.overlay}>
+          <div className={`${styles.modal} ${styles.modalDevolucao}`}>
+            <div className={styles.modalHeader}>
+              <div>
+                <h2>Selecionar empréstimo</h2>
+                <p>Este produto está em mais de um empréstimo aberto. Selecione a pessoa que está devolvendo.</p>
+              </div>
+              <button
+                type="button"
+                className={styles.btnFechar}
+                onClick={() => setItensCodigoPendentes([])}
+                disabled={devolvendo}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              <div className={styles.itensDevolucao}>
+                {itensCodigoPendentes.map(candidato => {
+                  const restante =
+                    Number(candidato.item.quantidade || 0) -
+                    Number(candidato.item.quantidade_devolvida || 0)
+
+                  return (
+                    <div key={candidato.item.id} className={styles.devolucaoItem}>
+                      <div>
+                        <strong>{candidato.pessoaNome}</strong>
+                        <span>{candidato.item.produto_nome}</span>
+                        <small>Quantidade em aberto: {restante}</small>
+                      </div>
+                      <button
+                        type="button"
+                        className={styles.btnSalvar}
+                        onClick={() => registrarDevolucaoPorCodigo(candidato)}
+                        disabled={devolvendo}
+                      >
+                        {devolvendo ? 'Registrando...' : 'Selecionar e devolver 1'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           </div>
         </div>
       )}
