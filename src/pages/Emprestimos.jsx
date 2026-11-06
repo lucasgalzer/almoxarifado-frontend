@@ -478,7 +478,7 @@ function Emprestimos() {
       // pelo código físico no backend.
       if (tipoControle === 'individual') {
         const { data } = await api.post(
-          `/emprestimos/devolver/codigo/${encodeURIComponent(codigo)}`
+          `/emprestimos/devolver/codigo/${encodeURIComponent(produto.codigo_interno || codigo)}`
         )
 
         tocarSom('devolucao')
