@@ -292,11 +292,14 @@ function Emprestimos() {
       return
     }
 
-    const tipoControle =
+    const tipoControle = String(
       produto.categoria_tipo_controle ||
       produto.tipo_controle ||
       'quantidade'
+    ).trim().toLowerCase()
 
+    // A categoria define o controle: individual bloqueia duplicidade;
+    // quantidade permite somar unidades do estoque, inclusive reutilizáveis.
     const individual = tipoControle === 'individual'
 
     const quantidade = individual
