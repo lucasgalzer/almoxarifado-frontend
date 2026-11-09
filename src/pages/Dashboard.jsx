@@ -65,6 +65,13 @@ function Dashboard() {
         console.error('Erro ao carregar notificações de reservas:', erroReservas)
       }
 
+      try {
+        const { data: aprovadasData } = await api.get('/dashboard/solicitacoes-aprovadas')
+        setSolicitacoesAprovadas(Array.isArray(aprovadasData) ? aprovadasData : [])
+      } catch (erroAprovadas) {
+        console.error('Erro ao carregar solicitações aprovadas:', erroAprovadas)
+      }
+
       setMenusInstituicao(
         Array.isArray(instituicao?.menus) ? instituicao.menus : []
       )
@@ -291,6 +298,27 @@ function Dashboard() {
 
         )}
 
+      </div>
+
+
+      <div className={styles.tudo}>
+        <CheckCircle size={18} color="#16a34a" />
+        <div style={{ flex: 1 }}>
+          <strong>
+            {solicitacoesAprovadas.length === 0
+              ? 'Nenhuma solicitação aprovada recentemente'
+              : 'Solicitações aprovadas recentemente'}
+          </strong>
+          {solicitacoesAprovadas.map(solicitacao => (
+            <div key={solicitacao.id} style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px', paddingTop: '7px' }}>
+              <span>{solicitacao.servico_nome || 'Solicitação'}</span>
+              <span>Solicitante: {solicitacao.solicitante_nome}</span>
+              {solicitacao.aprovado_em && (
+                <span>{new Date(solicitacao.aprovado_em).toLocaleString('pt-BR')}</span>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className={styles.tudo}>
