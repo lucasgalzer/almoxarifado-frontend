@@ -25,6 +25,17 @@ function formatarData(data) {
   return `${dia}/${mes}/${ano}`
 }
 
+function formatarHora(data) {
+  if (!data) return '—'
+  const valor = new Date(data)
+  if (Number.isNaN(valor.getTime())) return '—'
+  return valor.toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'America/Sao_Paulo',
+  })
+}
+
 function obterStatusLabel(status) {
   const mapa = {
     ativo: 'Em aberto',
@@ -984,9 +995,10 @@ function Emprestimos() {
             <thead>
               <tr>
                 <th>Solicitante</th>
-                <th>Itens</th>
-                <th>Status</th>
-                <th>Ações</th>
+                <th>Equipamentos</th>
+                <th>Horário</th>
+                <th>Data</th>
+                <th>Autorizante</th>
               </tr>
             </thead>
 
@@ -1013,9 +1025,15 @@ function Emprestimos() {
                     <tr
                       className={
                         expandido
-                          ? styles.linhaExpandida
-                          : ''
+                          ? `${styles.linhaEmprestimo} ${styles.linhaExpandida}`
+                          : styles.linhaEmprestimo
                       }
+                      onClick={() =>
+                        setEmprestimoExpandido(
+                          expandido ? null : emprestimo.id
+                        )
+                      }
+                      title="Clique para abrir os detalhes do empréstimo"
                     >
                       <td>
                         <strong>
@@ -1031,58 +1049,24 @@ function Emprestimos() {
                       </td>
 
                       <td>
-                        <strong>
-                          {quantidadeAberta} de {quantidadeTotal} unidade(s)
-                        </strong>
-                        <small className={styles.previaItens}>
+                        <span className={styles.equipamentosResumo}>
                           {Array.isArray(emprestimo.itens) && emprestimo.itens.length > 0
-                            ? emprestimo.itens.slice(0, 2).map(item =>
-                                `${item.produto_nome || 'Produto'} (${obterQuantidadeRestante(item)})`
-                              ).join(' • ')
-                            : 'Nenhum item informado'}
-                          {Array.isArray(emprestimo.itens) && emprestimo.itens.length > 2
-                            ? ` • +${emprestimo.itens.length - 2} produto(s)`
-                            : ''}
-                        </small>
-                      </td>
-
-                      <td>
-                        <span
-                          className={`${styles.badge} ${
-                            styles[
-                              `badge_${emprestimo.status}`
-                            ] || ''
-                          }`}
-                        >
-                          {obterStatusLabel(
-                            emprestimo.status
-                          )}
+                            ? emprestimo.itens.map(item =>
+                                `${item.produto_nome || 'Produto'} (${Number(item.quantidade || 0)})`
+                              ).join(' & ')
+                            : 'Nenhum equipamento informado'}
                         </span>
                       </td>
 
-                      <td
-                        onClick={event =>
-                          event.stopPropagation()
-                        }
-                      >
-                        <div className={styles.acoesTabela}>
-                          <button
-                            type="button"
-                            className={styles.btnAcao}
-                            onClick={() =>
-                              setEmprestimoExpandido(expandido ? null : emprestimo.id)
-                            }
-                          >
-                            {expandido ? 'Fechar detalhes' : 'Ver detalhes'}
-                          </button>
-                        </div>
-                      </td>
+                      <td>{formatarHora(emprestimo.created_at)}</td>
+                      <td>{formatarData(emprestimo.created_at)}</td>
+                      <td>{emprestimo.operador_nome || emprestimo.autorizante_nome || '—'}</td>
                     </tr>
 
                     {expandido && (
                       <tr>
                         <td
-                          colSpan="4"
+                          colSpan="5"
                           className={
                             styles.linhaDetalhes
                           }
