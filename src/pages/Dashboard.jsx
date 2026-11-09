@@ -26,7 +26,8 @@ function Dashboard() {
 
   const [dados, setDados] = useState(null)
   const [alertas, setAlertas] = useState([])
-  const [reservas, setReservas] = useState([])\n  const [solicitacoesAprovadas, setSolicitacoesAprovadas] = useState([])
+  const [reservas, setReservas] = useState([])
+  const [solicitacoesAprovadas, setSolicitacoesAprovadas] = useState([])
   const [carregando, setCarregando] = useState(true)
 
   const [menusInstituicao, setMenusInstituicao] = useState([])
