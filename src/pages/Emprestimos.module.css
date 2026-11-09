@@ -1579,3 +1579,27 @@
   opacity: 0.6;
 }
 
+/* Tabela de empréstimos no padrão de autorizações */
+.linhaEmprestimo {
+  cursor: pointer;
+}
+
+.linhaEmprestimo:hover > td {
+  background: #f1f5f9;
+}
+
+.linhaEmprestimo > td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.equipamentosResumo {
+  display: block;
+  max-width: 360px;
+  margin: 0 auto;
+  overflow: hidden;
+  color: #40556f;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
