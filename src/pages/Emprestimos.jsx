@@ -1199,7 +1199,7 @@ function Emprestimos() {
       </section>
 
       {modalNovo && (
-        <div className={styles.overlay}>
+        <div className={styles.overlay} data-modal-open="true">
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
               <div>
