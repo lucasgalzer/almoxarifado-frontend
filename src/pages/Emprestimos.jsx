@@ -761,6 +761,64 @@ function Emprestimos() {
     }
   }
 
+  async function devolverEmprestimoCompleto(emprestimo) {
+    if (!emprestimo || devolvendo) return
+
+    const itensPendentes = (Array.isArray(emprestimo.itens) ? emprestimo.itens : [])
+      .map(item => ({
+        item_id: item.id,
+        quantidade: obterQuantidadeRestante(item),
+        produto_nome: item.produto_nome || 'Produto',
+      }))
+      .filter(item => item.quantidade > 0)
+
+    if (itensPendentes.length === 0) {
+      addToast('Este empréstimo não possui itens pendentes de devolução', 'erro')
+      return
+    }
+
+    const resumo = itensPendentes
+      .map(item => `• ${item.produto_nome}: ${item.quantidade}`)
+      .join('\\n')
+
+    const confirmar = window.confirm(
+      `Confirmar a devolução de todos os itens do empréstimo de ${emprestimo.pessoa_nome || 'esta pessoa'}?\\n\\n${resumo}`
+    )
+
+    if (!confirmar) return
+
+    setDevolvendo(true)
+    let processados = 0
+
+    try {
+      for (const item of itensPendentes) {
+        await api.post(`/emprestimos/${emprestimo.id}/devolver`, {
+          item_id: item.item_id,
+          quantidade: item.quantidade,
+          condicao: 'normal',
+          observacoes: 'Devolução total do empréstimo',
+        })
+        processados += 1
+      }
+
+      tocarSom('devolucao')
+      addToast('Todos os itens foram devolvidos com sucesso', 'sucesso')
+      setEmprestimoExpandido(null)
+      await carregarEmprestimos()
+    } catch (error) {
+      console.error(error)
+      addToast(
+        processados > 0
+          ? `Devolução parcialmente registrada (${processados} de ${itensPendentes.length} itens). Atualize a lista e confira os detalhes.`
+          : error.response?.data?.erro || 'Não foi possível devolver o empréstimo',
+        'erro'
+      )
+      await carregarEmprestimos()
+    } finally {
+      setDevolvendo(false)
+    }
+  }
+
   async function cancelarEmprestimo(emprestimo) {
     if (!emprestimo) return
 
@@ -926,8 +984,6 @@ function Emprestimos() {
             <thead>
               <tr>
                 <th>Solicitante</th>
-                <th>Retirada</th>
-                <th>Devolução prevista</th>
                 <th>Itens</th>
                 <th>Status</th>
                 <th>Ações</th>
@@ -960,13 +1016,6 @@ function Emprestimos() {
                           ? styles.linhaExpandida
                           : ''
                       }
-                      onClick={() =>
-                        setEmprestimoExpandido(
-                          expandido
-                            ? null
-                            : emprestimo.id
-                        )
-                      }
                     >
                       <td>
                         <strong>
@@ -983,52 +1032,17 @@ function Emprestimos() {
 
                       <td>
                         <strong>
-                          {formatarData(
-                            emprestimo.data_retirada
-                          )}
+                          {quantidadeAberta} de {quantidadeTotal} unidade(s)
                         </strong>
-
-                        <small>
-                          {(typeof emprestimo.periodo_retirada === 'string'
-                            ? emprestimo.periodo_retirada
-                            : emprestimo.periodo_retirada?.nome) ||
-                            emprestimo.periodo_retirada_nome ||
-                            '—'}
-                        </small>
-                      </td>
-
-                      <td>
-                        {emprestimo.data_devolucao_prevista ? (
-                          <>
-                            <strong>
-                              {formatarData(
-                                emprestimo.data_devolucao_prevista
-                              )}
-                            </strong>
-
-                            <small>
-                              {(typeof emprestimo.periodo_devolucao_prevista === 'string'
-                                ? emprestimo.periodo_devolucao_prevista
-                                : emprestimo.periodo_devolucao_prevista?.nome) ||
-                                emprestimo.periodo_devolucao_prevista_nome ||
-                                '—'}
-                            </small>
-                          </>
-                        ) : (
-                          <span className={styles.semPrazo}>
-                            Sem prazo
-                          </span>
-                        )}
-                      </td>
-
-                      <td>
-                        <strong>
-                          {quantidadeAberta}
-                        </strong>
-
-                        <small>
-                          de {quantidadeTotal}{' '}
-                          em aberto
+                        <small className={styles.previaItens}>
+                          {Array.isArray(emprestimo.itens) && emprestimo.itens.length > 0
+                            ? emprestimo.itens.slice(0, 2).map(item =>
+                                `${item.produto_nome || 'Produto'} (${obterQuantidadeRestante(item)})`
+                              ).join(' • ')
+                            : 'Nenhum item informado'}
+                          {Array.isArray(emprestimo.itens) && emprestimo.itens.length > 2
+                            ? ` • +${emprestimo.itens.length - 2} produto(s)`
+                            : ''}
                         </small>
                       </td>
 
@@ -1051,31 +1065,16 @@ function Emprestimos() {
                           event.stopPropagation()
                         }
                       >
-                        <div
-                          className={
-                            styles.acoesTabela
-                          }
-                        >
-                          {(emprestimo.status ===
-                            'ativo' ||
-                            emprestimo.status ===
-                              'parcialmente_devolvido') && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                abrirDevolucao(
-                                  emprestimo
-                                )
-                              }
-                              className={
-                                styles.btnAcao
-                              }
-                            >
-                              Devolver
-                            </button>
-                          )}
-
-
+                        <div className={styles.acoesTabela}>
+                          <button
+                            type="button"
+                            className={styles.btnAcao}
+                            onClick={() =>
+                              setEmprestimoExpandido(expandido ? null : emprestimo.id)
+                            }
+                          >
+                            {expandido ? 'Fechar detalhes' : 'Ver detalhes'}
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -1083,7 +1082,7 @@ function Emprestimos() {
                     {expandido && (
                       <tr>
                         <td
-                          colSpan="6"
+                          colSpan="4"
                           className={
                             styles.linhaDetalhes
                           }
@@ -1111,13 +1110,20 @@ function Emprestimos() {
 
                               {emprestimo.observacoes && (
                                 <p>
-                                  <strong>
-                                    Observações:
-                                  </strong>{' '}
-                                  {
-                                    emprestimo.observacoes
-                                  }
+                                  <strong>Observações:</strong>{' '}
+                                  {emprestimo.observacoes}
                                 </p>
+                              )}
+                              {(emprestimo.status === 'ativo' ||
+                                emprestimo.status === 'parcialmente_devolvido') && (
+                                <button
+                                  type="button"
+                                  className={styles.btnDevolverTodos}
+                                  disabled={devolvendo}
+                                  onClick={() => devolverEmprestimoCompleto(emprestimo)}
+                                >
+                                  {devolvendo ? 'Processando devolução...' : 'Devolver todo o empréstimo agora'}
+                                </button>
                               )}
                             </div>
 
