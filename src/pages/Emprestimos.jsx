@@ -910,14 +910,14 @@ function Emprestimos() {
             ref={inputDevolucaoRef}
             value={codigoDevolucao}
             onChange={event => setCodigoDevolucao(event.target.value)}
-            placeholder="Ler código de barras..."
+            placeholder="Leia o código de barras para devolver o item..."
             className={styles.inputCodigo}
             disabled={devolvendo}
           />
 
         </form>
         <button type="button" className={styles.btnNovo} onClick={abrirModalNovo}>
-          + Inserir empréstimo
+          Inserir empréstimo
         </button>
       </div>
 
