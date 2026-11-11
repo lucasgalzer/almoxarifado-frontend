@@ -1603,3 +1603,54 @@
   white-space: nowrap;
 }
 
+/* =========================================================
+   PALETA SÓBRIA — AÇÕES RÁPIDAS DE EMPRÉSTIMOS
+   Mantém o verde institucional como detalhe, sem cores gritantes.
+   ========================================================= */
+
+.acoesRapidas {
+  border-color: #d8dee7;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(30, 44, 64, .04);
+}
+
+.acoesRapidas .inputCodigo,
+.inputCodigo {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #263445;
+}
+
+.acoesRapidas .inputCodigo::placeholder,
+.inputCodigo::placeholder {
+  color: #8491a2;
+}
+
+.inputCodigo:focus {
+  border-color: #7e9b55;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(126, 155, 85, .13);
+}
+
+.acoesRapidas .btnNovo {
+  border: 1px solid #344454;
+  background: #344454;
+  color: #ffffff;
+}
+
+.acoesRapidas .btnNovo:hover {
+  border-color: #263544;
+  background: #263544;
+  filter: none;
+}
+
+.btnDevolverRapido {
+  border: 1px solid #647d45;
+  background: #647d45;
+  color: #ffffff;
+}
+
+.btnDevolverRapido:hover:not(:disabled) {
+  border-color: #526a37;
+  background: #526a37;
+}
