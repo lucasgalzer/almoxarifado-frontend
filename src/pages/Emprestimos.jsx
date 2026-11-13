@@ -367,6 +367,9 @@ function Emprestimos() {
       ])
     }
 
+    // Toca o áudio de confirmação após adicionar ou incrementar o produto.
+    tocarSom('emprestimo')
+
     setProdutoSelecionado(null)
     setCodigoProduto('')
     setQuantidadeProduto(1)
