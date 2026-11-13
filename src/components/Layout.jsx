@@ -10,17 +10,23 @@ import api from '../services/api'
 import styles from './Layout.module.css'
 
 const menuItems = [
+  // Operação
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, perfis: ['admin', 'operador'] },
-  { path: '/produtos', label: 'Produtos', icon: Package, perfis: ['admin', 'operador'] },
-  { path: '/pessoas', label: 'Pessoas', icon: Users, perfis: ['admin', 'operador'] },
-  { path: '/estoque', label: 'Estoque', icon: Archive, perfis: ['admin', 'operador'] },
   { path: '/emprestimos', label: 'Empréstimos', icon: ArrowLeftRight, perfis: ['admin', 'operador'] },
   { path: '/emprestimos-fixos', label: 'Empréstimos Fixos', icon: BookMarked, perfis: ['admin', 'operador'] },
   { path: '/solicitacoes', label: 'Solicitações', icon: ClipboardList, perfis: ['admin', 'operador'] },
+  // Gestão de materiais
+  { path: '/estoque', label: 'Estoque', icon: Archive, perfis: ['admin', 'operador'] },
+  { path: '/produtos', label: 'Produtos', icon: Package, perfis: ['admin', 'operador'] },
+  { path: '/pessoas', label: 'Pessoas', icon: Users, perfis: ['admin', 'operador'] },
   { path: '/manutencao', label: 'Manutenção', icon: Wrench, perfis: ['admin', 'operador'] },
+
+  // Consultas
   { path: '/relatorios', label: 'Relatórios', icon: BarChart2, perfis: ['admin', 'operador'] },
-  { path: '/configuracoes', label: 'Configurações', icon: Settings, perfis: ['admin'] },
+
+  // Administração
   { path: '/usuarios', label: 'Usuários', icon: UserCog, perfis: ['admin'] },
+  { path: '/configuracoes', label: 'Configurações', icon: Settings, perfis: ['admin'] },
 ]
 
 function ajustarCor(hex, percent) {
