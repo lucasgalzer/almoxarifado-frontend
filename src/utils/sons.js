@@ -1,27 +1,39 @@
 import itemInserido from '../assets/sounds/item_inserido.wav'
 import itemDevolvido from '../assets/sounds/item_devolvido_final2.wav'
 
-const sons = {
+const arquivos = {
   emprestimo: itemInserido,
-  devolucao: itemDevolvido
+  devolucao: itemDevolvido,
 }
 
-export function tocarSom(tipo) {
-  const caminho = sons[tipo]
+// Mantém uma instância por som para evitar recriar o elemento de áudio
+// a cada inclusão/devolução.
+const audios = Object.fromEntries(
+  Object.entries(arquivos).map(([tipo, caminho]) => {
+    const audio = new Audio(caminho)
+    audio.preload = 'auto'
+    audio.volume = 0.5
+    return [tipo, audio]
+  })
+)
 
-  if (!caminho) {
+export function tocarSom(tipo) {
+  const audio = audios[tipo]
+
+  if (!audio) {
     console.warn(`Som não encontrado: ${tipo}`)
     return
   }
 
-  const audio = new Audio(caminho)
-  audio.volume = 0.5
+  // Reinicia o áudio para permitir reproduções consecutivas.
+  audio.pause()
+  audio.currentTime = 0
 
-  audio.play()
-    .then(() => {
-      console.log(`Som reproduzido: ${tipo}`)
+  const reproducao = audio.play()
+
+  if (reproducao && typeof reproducao.catch === 'function') {
+    reproducao.catch(error => {
+      console.error(`Erro ao reproduzir o som "${tipo}":`, error)
     })
-    .catch(error => {
-      console.error('Erro ao reproduzir som:', error)
-    })
+  }
 }
