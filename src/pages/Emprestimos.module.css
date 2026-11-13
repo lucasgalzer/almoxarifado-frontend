@@ -1654,3 +1654,66 @@
   border-color: #526a37;
   background: #526a37;
 }
+
+
+/* Paginação da lista de empréstimos */
+.paginacao {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 4px 0;
+  border-top: 1px solid #e5eaf0;
+}
+
+.infoPaginacao {
+  color: #74839a;
+  font-size: 12px;
+}
+
+.controlesPaginacao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btnPagina {
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  color: #40556f;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btnPagina:hover:not(:disabled) {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.btnPagina:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.numeroPagina {
+  color: #40556f;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .paginacao {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .controlesPaginacao {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
