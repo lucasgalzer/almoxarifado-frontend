@@ -73,6 +73,8 @@ function Emprestimos() {
   const [filtroStatus, setFiltroStatus] = useState('ativo')
   const [filtroPessoa, setFiltroPessoa] = useState('')
   const [busca, setBusca] = useState('')
+  const [paginaAtual, setPaginaAtual] = useState(1)
+  const itensPorPagina = 10
 
   const [emprestimoExpandido, setEmprestimoExpandido] = useState(null)
 
@@ -251,6 +253,28 @@ function Emprestimos() {
       )
     })
   }, [emprestimos, busca])
+
+  const totalPaginas = Math.max(1, Math.ceil(emprestimosFiltrados.length / itensPorPagina))
+  const emprestimosPaginados = emprestimosFiltrados.slice(
+    (paginaAtual - 1) * itensPorPagina,
+    paginaAtual * itensPorPagina
+  )
+  const primeiroItemPagina = emprestimosFiltrados.length === 0
+    ? 0
+    : (paginaAtual - 1) * itensPorPagina + 1
+  const ultimoItemPagina = Math.min(
+    paginaAtual * itensPorPagina,
+    emprestimosFiltrados.length
+  )
+
+  useEffect(() => {
+    setPaginaAtual(1)
+    setEmprestimoExpandido(null)
+  }, [filtroStatus, filtroPessoa, busca])
+
+  useEffect(() => {
+    if (paginaAtual > totalPaginas) setPaginaAtual(totalPaginas)
+  }, [paginaAtual, totalPaginas])
 
   function limparFormulario() {
     setForm({
@@ -1006,7 +1030,7 @@ function Emprestimos() {
             </thead>
 
             <tbody>
-              {emprestimosFiltrados.map(emprestimo => {
+              {emprestimosPaginados.map(emprestimo => {
                 const expandido =
                   emprestimoExpandido ===
                   emprestimo.id
@@ -1198,6 +1222,35 @@ function Emprestimos() {
           </table>
         )}
       </div>
+
+      {!carregando && emprestimosFiltrados.length > 0 && (
+        <div className={styles.paginacao}>
+          <span className={styles.infoPaginacao}>
+            Mostrando {primeiroItemPagina}–{ultimoItemPagina} de {emprestimosFiltrados.length} empréstimos
+          </span>
+          <div className={styles.controlesPaginacao}>
+            <button
+              type="button"
+              className={styles.btnPagina}
+              onClick={() => setPaginaAtual(pagina => Math.max(1, pagina - 1))}
+              disabled={paginaAtual === 1}
+            >
+              Anterior
+            </button>
+            <span className={styles.numeroPagina}>
+              Página {paginaAtual} de {totalPaginas}
+            </span>
+            <button
+              type="button"
+              className={styles.btnPagina}
+              onClick={() => setPaginaAtual(pagina => Math.min(totalPaginas, pagina + 1))}
+              disabled={paginaAtual === totalPaginas}
+            >
+              Próxima
+            </button>
+          </div>
+        </div>
+      )}
 
       </section>
 
