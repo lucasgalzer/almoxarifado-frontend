@@ -7,6 +7,7 @@ function ModalHistorico({ produtoId, onFechar }) {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
   const [aba, setAba] = useState('emprestimos')
+  const [tentativa, setTentativa] = useState(0)
 
   useEffect(() => {
     let ativo = true
@@ -48,7 +49,7 @@ function ModalHistorico({ produtoId, onFechar }) {
 
     carregarHistorico()
     return () => { ativo = false }
-  }, [produtoId])
+  }, [produtoId, tentativa])
 
   function formatarData(data) {
     if (!data) return '—'
@@ -139,7 +140,7 @@ function ModalHistorico({ produtoId, onFechar }) {
           <div className={styles.estadoErro}>
             <strong>Não foi possível abrir o histórico</strong>
             <p>{erro}</p>
-            <button type="button" onClick={() => setAba(aba)}>Tentar novamente</button>
+            <button type="button" onClick={() => setTentativa(valor => valor + 1)}>Tentar novamente</button>
           </div>
         ) : dados && (
           <>
