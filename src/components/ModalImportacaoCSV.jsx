@@ -96,7 +96,7 @@ function ModalImportacaoCSV({ tipo, onFechar, onImportado }) {
 
   async function baixarModelo() {
     if (ehPessoas) {
-      const conteudo = 'nome_completo;matricula;email;cargo;telefone\\nMaria Silva;001;maria@escola.com;Coordenadora;(51) 99999-0001'
+      const conteudo = 'nome_completo;matricula;email;cargo;telefone\nMaria Silva;001;maria@escola.com;Coordenadora;(51) 99999-0001'
       baixarArquivoCSV(conteudo, 'modelo_pessoas.csv')
       return
     }
@@ -170,7 +170,7 @@ function ModalImportacaoCSV({ tipo, onFechar, onImportado }) {
     })
 
     const linhaExemplo = cabecalhos.map(coluna => exemplo[coluna] ?? '').join(';')
-    const conteudo = [cabecalhos.join(';'), linhaExemplo].join('\\n')
+    const conteudo = [cabecalhos.join(';'), linhaExemplo].join('\n')
     const nomeArquivo = modo === 'categoria'
       ? `modelo_produtos_${normalizarNomeArquivo(exemplo.categoria)}.csv`
       : 'modelo_produtos_multiplas_categorias.csv'
@@ -181,14 +181,14 @@ function ModalImportacaoCSV({ tipo, onFechar, onImportado }) {
   function normalizarNomeArquivo(valor) {
     return String(valor || 'categoria')
       .normalize('NFD')
-      .replace(/[\\u0300-\\u036f]/g, '')
+      .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '_')
       .replace(/^_+|_+$/g, '')
   }
 
   function baixarArquivoCSV(conteudo, nomeArquivo) {
-    const blob = new Blob(['\\uFEFF' + conteudo], { type: 'text/csv;charset=utf-8;' })
+    const blob = new Blob(['\uFEFF' + conteudo], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
