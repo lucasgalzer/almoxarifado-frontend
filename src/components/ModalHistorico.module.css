@@ -13,8 +13,8 @@
   background: var(--color-surface);
   border-radius: var(--radius-xl);
   width: 100%;
-  max-width: 600px;
-  max-height: 85vh;
+  max-width: 760px;
+  max-height: min(88vh, 820px);
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-lg);
@@ -180,3 +180,33 @@
 .badgeConserto { background: #eff6ff; color: #2563eb; }
 .badgeConsertado { background: #f0fdf4; color: #16a34a; }
 .badgeDescartado { background: #fef2f2; color: var(--color-danger); }
+.estadoErro {
+  margin: 20px 24px 24px;
+  padding: 18px;
+  color: #9f2d25;
+  background: #fef3f2;
+  border: 1px solid #fecdca;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.estadoErro p { margin: 6px 0 14px; }
+
+.estadoErro button {
+  padding: 8px 13px;
+  color: #fff;
+  background: #b42318;
+  border: 0;
+  border-radius: 7px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 620px) {
+  .modal { max-height: 92vh; }
+  .resumo { grid-template-columns: repeat(2, 1fr); }
+  .abas { overflow-x: auto; padding: 0 8px; }
+  .aba { flex: 0 0 auto; padding: 10px; font-size: 12px; }
+  .conteudo { padding: 12px; }
+}
