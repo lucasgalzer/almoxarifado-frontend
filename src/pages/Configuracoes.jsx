@@ -92,6 +92,8 @@ const [aparencia, setAparencia] = useState({
 
   const [novaOpcaoPorCampo, setNovaOpcaoPorCampo] = useState({})
   const [editandoOpcao, setEditandoOpcao] = useState(null)
+  const [opcoesNovoCampo, setOpcoesNovoCampo] = useState([])
+  const [novaOpcaoNovoCampo, setNovaOpcaoNovoCampo] = useState('')
 
   useEffect(() => {
     carregarCategorias()
@@ -262,9 +264,26 @@ const [aparencia, setAparencia] = useState({
     }
   }
 
+  function adicionarOpcaoNovoCampo() {
+    const valor = novaOpcaoNovoCampo.trim()
+    if (!valor) return
+    if (opcoesNovoCampo.some(opcao => opcao.toLowerCase() === valor.toLowerCase())) {
+      addToast('Esta opção já foi adicionada.', 'erro')
+      return
+    }
+    setOpcoesNovoCampo(prev => [...prev, valor])
+    setNovaOpcaoNovoCampo('')
+  }
+
+  function removerOpcaoNovoCampo(index) {
+    setOpcoesNovoCampo(prev => prev.filter((_, i) => i !== index))
+  }
+
   function iniciarNovoCampoSolicitacao() {
     setEditandoCampoSolicitacao(null)
     setFormularioCampoAberto(true)
+    setOpcoesNovoCampo([])
+    setNovaOpcaoNovoCampo('')
     setNovoCampoSolicitacao({
       nome: '',
       label: '',
@@ -298,12 +317,28 @@ const [aparencia, setAparencia] = useState({
         await api.put(`/solicitacao-configuracao/campos/${editandoCampoSolicitacao.id}`, payload)
         addToast('Pergunta atualizada com sucesso!', 'sucesso')
       } else {
-        await api.post(`/solicitacao-configuracao/servicos/${servicoExpandido.id}/campos`, payload)
+        const { data: campoCriado } = await api.post(
+          `/solicitacao-configuracao/servicos/${servicoExpandido.id}/campos`,
+          payload
+        )
+
+        // Opções são cadastradas após a criação da pergunta, pois dependem do ID do campo.
+        if (payload.tipo === 'select' && opcoesNovoCampo.length > 0) {
+          for (let index = 0; index < opcoesNovoCampo.length; index++) {
+            await api.post(
+              `/solicitacao-configuracao/campos/${campoCriado.id}/opcoes`,
+              { valor: opcoesNovoCampo[index], ordem: index + 1 }
+            )
+          }
+        }
+
         addToast('Pergunta adicionada com sucesso!', 'sucesso')
       }
 
       setEditandoCampoSolicitacao(null)
       setFormularioCampoAberto(false)
+      setOpcoesNovoCampo([])
+      setNovaOpcaoNovoCampo('')
       setNovoCampoSolicitacao({
         nome: '',
         label: '',
@@ -324,6 +359,8 @@ const [aparencia, setAparencia] = useState({
   function editarCampoSolicitacao(campo) {
     setEditandoCampoSolicitacao(campo)
     setFormularioCampoAberto(true)
+    setOpcoesNovoCampo([])
+    setNovaOpcaoNovoCampo('')
     setNovoCampoSolicitacao({
       nome: campo.nome || '',
       label: campo.label || '',
@@ -1006,6 +1043,45 @@ const [aparencia, setAparencia] = useState({
                                   </select>
                                   <input className={styles.input} type="number" min="0" placeholder="Ordem" value={novoCampoSolicitacao.ordem} onChange={e => setNovoCampoSolicitacao(prev => ({ ...prev, ordem: e.target.value }))} />
                                 </div>
+
+                                {novoCampoSolicitacao.tipo === 'select' && !editandoCampoSolicitacao && (
+                                  <div style={{ marginTop: '12px', padding: '12px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface)' }}>
+                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: 'var(--color-text)', marginBottom: '8px' }}>
+                                      Opções da lista *
+                                    </label>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                      <input
+                                        className={styles.input}
+                                        value={novaOpcaoNovoCampo}
+                                        onChange={e => setNovaOpcaoNovoCampo(e.target.value)}
+                                        onKeyDown={e => {
+                                          if (e.key === 'Enter') {
+                                            e.preventDefault()
+                                            adicionarOpcaoNovoCampo()
+                                          }
+                                        }}
+                                        placeholder="Digite uma opção e clique em Adicionar"
+                                      />
+                                      <button type="button" onClick={adicionarOpcaoNovoCampo} className={styles.btnSalvarInline}>
+                                        Adicionar
+                                      </button>
+                                    </div>
+                                    {opcoesNovoCampo.length > 0 ? (
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px', marginTop: '10px' }}>
+                                        {opcoesNovoCampo.map((opcao, index) => (
+                                          <span key={index} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 9px', background: 'var(--color-surface-alt)', border: '1px solid var(--color-border)', borderRadius: '6px', fontSize: '12px' }}>
+                                            {opcao}
+                                            <button type="button" onClick={() => removerOpcaoNovoCampo(index)} aria-label={`Remover opção ${opcao}`} style={{ border: 0, background: 'transparent', color: 'var(--color-text-muted)', cursor: 'pointer', fontWeight: 700 }}>×</button>
+                                          </span>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <p style={{ margin: '8px 0 0', fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                                        Adicione pelo menos uma opção para disponibilizar esta pergunta como lista.
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '10px 0', fontSize: '12px', color: 'var(--color-text-muted)', cursor: 'pointer' }}>
                                   <input type="checkbox" checked={novoCampoSolicitacao.obrigatorio} onChange={e => setNovoCampoSolicitacao(prev => ({ ...prev, obrigatorio: e.target.checked }))} />
                                   Obrigatório
@@ -1017,6 +1093,8 @@ const [aparencia, setAparencia] = useState({
                                     onClick={() => {
                                       setFormularioCampoAberto(false)
                                       setEditandoCampoSolicitacao(null)
+                                      setOpcoesNovoCampo([])
+                                      setNovaOpcaoNovoCampo('')
                                       setNovoCampoSolicitacao({
                                         nome: '',
                                         label: '',
