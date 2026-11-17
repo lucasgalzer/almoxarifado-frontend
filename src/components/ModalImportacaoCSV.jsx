@@ -227,7 +227,10 @@ function ModalImportacaoCSV({ tipo, onFechar, onImportado }) {
                     {categorias.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                   </select>
                 )}
-                <p><strong>Colunas padrão:</strong> codigo_interno;nome;{modo === 'multiplas' ? 'categoria;' : ''}tipo;unidade_medida;quantidade_atual;quantidade_minima;localizacao_fisica;descricao;observacoes</p>
+                <div className={styles.colunasInfo}>
+                  <strong>Colunas padrão:</strong>
+                  <code>codigo_interno;nome;{modo === 'multiplas' ? 'categoria;' : ''}tipo;unidade_medida;quantidade_atual;quantidade_minima;localizacao_fisica;descricao;observacoes</code>
+                </div>
                 <p>Campos personalizados: use o nome técnico configurado na categoria como cabeçalho (por exemplo, numero_patrimonio).</p>
                 <p>Campos obrigatórios e opções serão validados conforme a categoria de cada produto. Categorias disponíveis são limitadas ao setor atual.</p>
               </>

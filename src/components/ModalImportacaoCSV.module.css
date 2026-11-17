@@ -82,7 +82,7 @@
   color: #334155;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-left: 4px solid #78a92f;
+  border-left: 1px solid #e2e8f0;
   border-radius: 10px;
   font-size: 13px;
   line-height: 1.55;
@@ -114,6 +114,31 @@
 .info select:focus {
   border-color: #78a92f;
   box-shadow: 0 0 0 3px rgba(120, 169, 47, 0.15);
+}
+
+
+.colunasInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.colunasInfo code {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+  color: #334155;
+  background: #eef2f7;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  font-size: 12px;
+  line-height: 1.55;
 }
 
 .info code {
