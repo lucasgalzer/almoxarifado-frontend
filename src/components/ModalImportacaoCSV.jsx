@@ -94,17 +94,105 @@ function ModalImportacaoCSV({ tipo, onFechar, onImportado }) {
     }
   }
 
-  function baixarModelo() {
-    const conteudo = ehPessoas
-      ? 'nome_completo;matricula;email;cargo;telefone\nMaria Silva;001;maria@escola.com;Coordenadora;(51) 99999-0001'
-      : modo === 'categoria'
-        ? 'codigo_interno;nome;tipo;unidade_medida;quantidade_atual;quantidade_minima;localizacao_fisica;descricao;observacoes\nP001;Notebook Dell;reutilizavel;un;10;2;Sala TI;Notebook Dell Latitude;'
-        : 'codigo_interno;nome;categoria;tipo;unidade_medida;quantidade_atual;quantidade_minima;localizacao_fisica;descricao;observacoes\nP001;Notebook Dell;Informática;reutilizavel;un;10;2;Sala TI;Notebook Dell Latitude;'
+  async function baixarModelo() {
+    if (ehPessoas) {
+      const conteudo = 'nome_completo;matricula;email;cargo;telefone\\nMaria Silva;001;maria@escola.com;Coordenadora;(51) 99999-0001'
+      baixarArquivoCSV(conteudo, 'modelo_pessoas.csv')
+      return
+    }
+
+    let camposPersonalizados = []
+
+    if (modo === 'categoria') {
+      if (!categoriaId) {
+        setErro('Selecione uma categoria antes de baixar o modelo.')
+        return
+      }
+
+      try {
+        setErro('')
+        const { data } = await api.get(`/categorias/${categoriaId}/campos`)
+        camposPersonalizados = Array.isArray(data) ? data : []
+      } catch {
+        setErro('Não foi possível carregar os campos personalizados da categoria.')
+        return
+      }
+    }
+
+    const colunasPadrao = [
+      'codigo_interno',
+      'nome',
+      ...(modo === 'multiplas' ? ['categoria'] : []),
+      'tipo',
+      'unidade_medida',
+      'quantidade_atual',
+      'quantidade_minima',
+      'localizacao_fisica',
+      'descricao',
+      'observacoes'
+    ]
+    const nomesCampos = camposPersonalizados
+      .map(campo => campo.nome)
+      .filter(Boolean)
+    const cabecalhos = [...new Set([...colunasPadrao, ...nomesCampos])]
+
+    const exemplo = {
+      codigo_interno: 'P001',
+      nome: 'Produto de exemplo',
+      categoria: categorias.find(c => String(c.id) === String(categoriaId))?.nome || 'Categoria',
+      tipo: 'reutilizavel',
+      unidade_medida: 'un',
+      quantidade_atual: '1',
+      quantidade_minima: '0',
+      localizacao_fisica: 'Sala TI',
+      descricao: 'Descrição do produto',
+      observacoes: ''
+    }
+
+    camposPersonalizados.forEach(campo => {
+      if (!campo.nome) return
+      if (campo.tipo === 'boolean') {
+        exemplo[campo.nome] = 'nao'
+      } else if (campo.tipo === 'numero') {
+        exemplo[campo.nome] = '0'
+      } else if (campo.tipo === 'select') {
+        let opcoes = campo.opcoes
+        if (typeof opcoes === 'string') {
+          try { opcoes = JSON.parse(opcoes) } catch { opcoes = [] }
+        }
+        const primeiraOpcao = Array.isArray(opcoes) ? opcoes[0] : ''
+        exemplo[campo.nome] = typeof primeiraOpcao === 'object'
+          ? (primeiraOpcao.value ?? primeiraOpcao.label ?? '')
+          : (primeiraOpcao || '')
+      } else {
+        exemplo[campo.nome] = ''
+      }
+    })
+
+    const linhaExemplo = cabecalhos.map(coluna => exemplo[coluna] ?? '').join(';')
+    const conteudo = [cabecalhos.join(';'), linhaExemplo].join('\\n')
+    const nomeArquivo = modo === 'categoria'
+      ? `modelo_produtos_${normalizarNomeArquivo(exemplo.categoria)}.csv`
+      : 'modelo_produtos_multiplas_categorias.csv'
+
+    baixarArquivoCSV(conteudo, nomeArquivo)
+  }
+
+  function normalizarNomeArquivo(valor) {
+    return String(valor || 'categoria')
+      .normalize('NFD')
+      .replace(/[\\u0300-\\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+  }
+
+  function baixarArquivoCSV(conteudo, nomeArquivo) {
     const blob = new Blob(['\\uFEFF' + conteudo], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = ehPessoas ? 'modelo_pessoas.csv' : (modo === 'categoria' ? 'modelo_produtos_categoria_unica.csv' : 'modelo_produtos_multiplas_categorias.csv')
+    link.download = nomeArquivo
     document.body.appendChild(link)
     link.click()
     link.remove()
