@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
 import ModalProduto from '../components/ModalProduto'
+import ModalDetalhesProduto from '../components/ModalDetalhesProduto'
 import ModalImportacaoCSV from '../components/ModalImportacaoCSV'
 import ModalHistorico from '../components/ModalHistorico'
 import ModalConfirmacao from '../components/ModalConfirmacao'
@@ -26,6 +27,7 @@ function Produtos() {
 
   const [modalAberto, setModalAberto] = useState(false)
   const [produtoSelecionado, setProdutoSelecionado] = useState(null)
+  const [produtoDetalhes, setProdutoDetalhes] = useState(null)
   const [modalCSVAberto, setModalCSVAberto] = useState(false)
   const [produtoHistorico, setProdutoHistorico] = useState(null)
   const [produtoExcluindo, setProdutoExcluindo] = useState(null)
@@ -241,8 +243,8 @@ const opcoesStatus = [
                 <tr
                   key={produto.id}
                   className={`${produto.quantidade_atual <= produto.quantidade_minima && produto.quantidade_minima > 0 ? styles.rowAlerta : ''} ${selecionados.includes(produto.id) ? styles.rowSelecionado : ''}`}
-                  onClick={modoSelecao ? () => toggleSelecao(produto.id) : undefined}
-                  style={modoSelecao ? { cursor: 'pointer' } : {}}
+                  onClick={() => modoSelecao ? toggleSelecao(produto.id) : setProdutoDetalhes(produto)}
+                  className={modoSelecao ? styles.linhaClicavel : styles.linhaDetalhes}
                 >
                   {modoSelecao && (
                     <td>
@@ -306,6 +308,10 @@ const opcoesStatus = [
           </div>
         )}
       </div>
+
+      {produtoDetalhes && !modoSelecao && (
+        <ModalDetalhesProduto produto={produtoDetalhes} onFechar={() => setProdutoDetalhes(null)} />
+      )}
 
       {modalAberto && (
         <ModalProduto produto={produtoSelecionado} onFechar={fecharModal} onSalvar={aoSalvar} />

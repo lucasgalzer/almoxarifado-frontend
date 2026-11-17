@@ -255,3 +255,15 @@
 .btnCancelarSelecao:hover { background: var(--color-border); }
 
 .rowSelecionado { background: #f5f3ff !important; }
+.linhaDetalhes {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.linhaDetalhes:hover {
+  background: #f5f8f1 !important;
+}
+
+.linhaClicavel {
+  cursor: pointer;
+}
